@@ -38,7 +38,7 @@ double* randn(double mean, double variance, unsigned int length)
 
 int* randbits(unsigned int length)
 {
-    double *seq = malloc(length*sizeof *seq);/*{{{*/
+    int *seq = malloc(length*sizeof *seq);/*{{{*/
     for (int i = 0; i < length; i++)
     {
         seq[i] = rand() % 2;
