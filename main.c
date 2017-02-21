@@ -15,37 +15,19 @@
 
 // thread routines
 int simulate_awgn(int *packet, double *noise_sequence, int packet_length, double sigma);
-int encoding_task(int *packet, double *noise_sequence, int packet_length, double sigma, t_convcode code);
+int simulate_conv(int *packet, double *noise_sequence, int packet_length, double sigma, t_convcode code);
 
-// cc functions
-int conv_state_update(int state, double input);
-void conv_output_fun(int state, double input, int *output);
-double termin_fun(int state);
-
-/*
-    Main program
-*/
 int main(int argc, char *argv[])
 {
-
     // define code
-    t_convcode code = {/*{{{*/
-            .memory = 3,
-            .state_update_function = conv_state_update,
-            .output_function = conv_output_fun,
-            .termination_function = termin_fun,
-            .n = 2, //inverse of the rate for rate 1/n,
-            .neighbors = {
-                    {{0, 0}, {1, 0}},
-                    {{2, 0}, {3, 0}},
-                    {{4, 0}, {5, 0}},
-                    {{6, 0}, {7, 0}},
-                    {{0, 1}, {1, 1}},
-                    {{3, 1}, {2, 1}},
-                    {{4, 1}, {5, 1}},
-                    {{6, 1}, {7, 1}}
-            }
-    };/*}}}*/
+    int N_components = 2;
+    char *forward[N_components];
+    forward[0] = "111";
+    forward[1] = "011";
+
+    char *backward;
+    backward = "00";
+    t_convcode code = convcode_initialize(forward, backward, N_components);
 
     // file handling/*{{{*/
     struct tm *time_;
@@ -58,9 +40,6 @@ int main(int argc, char *argv[])
         printf("Error while determining the path of the binary file.\n");
         return -1;
     }
-
-    /* printf("Path of the executable: %s\n", buff); */
-    /* printf("Lenght of the string: %d\n", len); */
 
     // remove filename from path
     ssize_t i  = len - 1;
@@ -99,12 +78,12 @@ int main(int argc, char *argv[])
     printf("done.\n");/*}}}*/
 
     // simulation parameters
-    unsigned int packet_length = 1e3;
-    unsigned int num_packets = 1e3;
+    int packet_length = (int) 1e3;
+    int num_packets = (int) 1e3;
 
     int num_SNR = 20;
-    int min_SNR = 5;
-    int max_SNR = 30;
+    int min_SNR = -2;
+    int max_SNR = 10;
     double *SNR_dB = linspace(min_SNR, max_SNR, num_SNR);
     double *sigma = malloc(num_SNR* sizeof *sigma);
 
@@ -112,15 +91,12 @@ int main(int argc, char *argv[])
     for (int i = 0; i < num_SNR; i++)
         sigma[i] = sqrt(1/ pow(10, SNR_dB[i]/10));
 
-    print_array(sigma, num_SNR);
-
     printf("**************************************************************\n");
     printf("Simulation starting with the following parameters:\n");
     printf("(Uncoded) Packet Length: %d\tPacket Number: %d\n", packet_length, num_packets);
     printf("Minimum SNR: %d dB\tMax SNR: %d dB\tSNR points: %d\n", min_SNR, max_SNR, num_SNR);
     printf("**************************************************************\n\n");
     printf("Press ENTER to start the simulation.\n");
-    getchar();
 
     // simulation loop/*{{{*/
 
@@ -129,7 +105,7 @@ int main(int argc, char *argv[])
 
     // number of erroneous bits for each tested packet
     long int *errors = calloc(num_SNR, sizeof(long int));
-    int pktcount = 0;
+    int packet_count = 0;
 
     omp_set_num_threads(4);
     #pragma omp parallel
@@ -137,17 +113,17 @@ int main(int argc, char *argv[])
         #pragma omp for nowait
         for (int k = 0; k < num_packets; k++)
         {
-            pktcount++;
+            packet_count++;
             // generate packet
             int *packet = randbits(packet_length);
 
-            printf("Processing packet #%d/%d\n", pktcount, num_packets);
+            printf("Processing packet #%d/%d\n", packet_count, num_packets);
 
             //double *noise_sequence = randn(0, 1, packet_length);
-            double *noise_seq_coded = randn(0, 1, (packet_length + code.memory)*code.n);
+            double *noise_seq_coded = randn(0, 1, (packet_length + code.memory)*code.components);
 
             for (int s = 0; s < num_SNR; s++){
-                errors[s] += encoding_task(packet, noise_seq_coded, packet_length, sigma[s], code);
+                errors[s] += simulate_conv(packet, noise_seq_coded, packet_length, sigma[s], code);
             }
 
             free(packet);
@@ -168,7 +144,9 @@ int main(int argc, char *argv[])
     save_data(SNR_dB, BER, headers, num_SNR, file);
     fclose(file);
 
-    print_array(BER, num_SNR);
+    for (int j = 0; j < num_SNR; ++j) {
+       printf("%20f dB%20.4e\n", SNR_dB[j], BER[j]);
+    }
 
     // release allocated memory
     printf("Releasing memory...");
@@ -192,53 +170,25 @@ int simulate_awgn(int *packet, double *noise_sequence, int packet_length, double
     return errors;/*}}}*/
 }
 
-int encoding_task(int *packet, double *noise_sequence, int packet_length, double sigma, t_convcode code)
+int simulate_conv(int *packet, double *noise_sequence, int packet_length, double sigma, t_convcode code)
 {
     int errors = 0;/*{{{*/
-    int *encoded = conv_encode(packet, packet_length, code);
-    int encoded_length = code.n*(packet_length + code.memory);
+    int *encoded = convcode_encode(packet, packet_length, code);
+    int encoded_length = code.components*(packet_length + code.memory);
+
 
     double *received = malloc(encoded_length * sizeof *received);
     for (int i = 0; i < encoded_length; i++)
-        received[i] += sigma*noise_sequence[i];
+        received[i] = (2*encoded[i] - 1) + sigma*noise_sequence[i];
 
-    int *decoded = conv_decode(received, encoded_length, code);
+    int *decoded = convcode_decode(received, encoded_length, code);
     for (int j = 0; j < packet_length; ++j) {
         errors += (decoded[j] != packet[j]);
     }
 
+    free(decoded);
     free(encoded);
     free(received);
     return errors;/*}}}*/
 }
 
-/*
-    state update and output functions for the code assigned for the homework
-*/
-int conv_state_update(int state, double input)
-{
-    int s2 = (state >> 1) & 1;/*{{{*/
-    int s1 = (state >> 2) & 1;
-    int s0 = (int) input;
-
-    return 4*s0 + 2*s1 + s2;/*}}}*/
-}
-
-void conv_output_fun(int state, double input, int *output)
-{
-    int i = (int)input;/*{{{*/
-    int s0 = (state >> 2) & 1;
-    int s1 = (state >> 1) & 1;
-    int s2 = (state >> 0) & 1;
-
-    output[0] = (((i + s1) % 2) + s2) % 2;
-    output[1] = (output[0] + s0) % 2;/*}}}*/
-}
-
-// poly codes require zero input to terminate trellis
-double termin_fun(int state)
-{
-/*{{{*/
-    return 0;
-/*}}}*/
-}/*}}}*/

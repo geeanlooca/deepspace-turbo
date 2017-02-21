@@ -6,7 +6,9 @@
 #define DEEPSPACE_TURBO_UTILITIES_H
 
 #include<stdio.h>
-void print_array(double *array, unsigned int length);
+void print_array_int(int *array, int length);
+
+void print_array(double *array, int length);
 
 double* randn(double mean, double variance, unsigned int length);
 

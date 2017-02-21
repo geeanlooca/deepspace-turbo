@@ -4,27 +4,26 @@
 
 #ifndef DEEPSPACE_TURBO_LIBCONVCODES_H
 #define DEEPSPACE_TURBO_LIBCONVCODES_H
-#define MAX_STATES 100
-
-typedef struct str_neighbor{
-    int state;
-    int input;
-} t_neigh;
 
 typedef struct str_convcode{
+    int components;
     int memory;
-    int (*state_update_function)(int , double);
-    void (*output_function)(int, double, int*);
-    double (*termination_function)(int);
-    int n; //inverse of the rate for rate 1/n
-    int neighbors[MAX_STATES][MAX_STATES][2];
-
+    int **forward_connections;
+    int *backward_connections;
+    int **next_state;
+    int **neighbors;
+    int ***output;
 } t_convcode;
 
-static int index3d(int i, int j, int k, int sizex, int sizey, int sizez);
+static int get_bit(int num, int position);
+static char* state2str(int state, int memory);
+static int convcode_stateupdate(int state, int input, t_convcode code);
+static int *convcode_output(int state, int input, t_convcode code);
 
-int* conv_encode(double* input, unsigned int length, t_convcode code);
-
-int* conv_decode(double* input, unsigned int length, t_convcode code);
+t_convcode convcode_initialize(char *forward[], char *backward, int N_components);
+void convcode_clear(t_convcode code);
+int* convcode_encode(int *packet, int packet_length, t_convcode code);
+int* convcode_decode(double *received, int length, t_convcode code);
+void print_neighbors(t_convcode code);
 
 #endif //DEEPSPACE_TURBO_LIBCONVCODES_H

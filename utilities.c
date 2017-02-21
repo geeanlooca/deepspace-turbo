@@ -9,7 +9,15 @@
 #include <math.h>
 
 
-void print_array(double *array, unsigned int length)
+void print_array_int(int *array, int length)
+{
+    for (int i = 0; i < length; i++)/*{{{*/
+    {
+        printf("array[%d] = %d\n", i, array[i]);
+    }/*}}}*/
+}
+
+void print_array(double *array, int length)
 {
     for (int i = 0; i < length; i++)/*{{{*/
     {

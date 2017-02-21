@@ -1,130 +1,356 @@
 //
 // Created by gianluca on 20/02/17.
 //
-
-#include "libconvcodes.h"
-#include <stdlib.h>
-#include <math.h>
-#include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <float.h>
+#include <math.h>
 #include "libconvcodes.h"
 
-int* conv_encode(double* input, unsigned int length, t_convcode code)
+static int get_bit(int num, int position)
 {
-    // length of the encoded packet
-    int out_length = (code.memory + length)*code.n;
+    return (num >> position) & 1;
+}
 
-    // array containing the encoded packet
-    int *encoded = malloc(out_length * sizeof *encoded);
+static char* state2str(int state, int memory)
+{
+    char *str_state = malloc(memory + 1);
+    str_state[memory] = '\0';
 
-    // terminated trellis: initial and final state must be 0
-    int state = 0;
-    int *output = (int*) calloc(code.n, sizeof *output); // contains the n-long output for given (state,input symbol) couple
-
-    int (*state_update_function)(int , double) = code.state_update_function;
-    void (*output_function)(int, double, int*) = code.output_function;
-    double (*termination_function)(int) = code.termination_function;
-
-    for (int i = 0; i < length + code.memory; i++)
-    {
-        double u = (i < length) ? input[i] : (*termination_function)(state); // current input
-        (*output_function)(state, u, output);
-        state = (*state_update_function)(state, u);
-
-        for (int j = 0; j < code.n; j++)
-            encoded[i*code.n + j] = output[j];
+    for (int i = 0; i < memory; i++) {
+       str_state[i] = '0' + get_bit(state, memory - 1 - i);
     }
 
-    //assume poly code
-    free(output);
-
-    return encoded;
+    return str_state;
 }
 
-static int index3d(int i, int j, int k, int sizex, int sizey, int sizez)
+static int convcode_stateupdate(int state, int input, t_convcode code)
 {
-    return sizez*sizey*i + sizez*j + k;
+    int memory = code.memory;
+
+    int first_reg = 0;
+    for (int i = 0; i < memory; i++) {
+        first_reg = (first_reg + code.backward_connections[i]*get_bit(state, memory - 1 - i)) % 2;
+    }
+
+    // shift the content of the registers
+    int new_state = state >> 1;
+
+    // compute the new content of the first register (MSB)
+    first_reg = (first_reg + input) % 2;
+
+    // switch last bit
+    new_state ^= (-first_reg ^ new_state) & (1 << (memory - 1));
+
+    return new_state;
 }
 
-int* conv_decode(double* input, unsigned int length, t_convcode code)
+static int *convcode_output(int state, int input, t_convcode code)
 {
-    int packet_length = length / code.n;
+    int *output = calloc(code.components, sizeof(int));
+    int new_state = convcode_stateupdate(state, input, code);
+
+    // get content of first register of the new state
+    // we have to add it to the feedforward part
+    int first_reg = get_bit(new_state, code.memory - 1);
+
+    for (int c = 0; c < code.components; c++) {
+        output[c] = code.forward_connections[c][0]*first_reg;
+
+        for (int i = 0; i < code.memory; i++) {
+            output[c] = (output[c] + code.forward_connections[c][i+1]*get_bit(state, code.memory - 1 - i)) % 2;
+        }
+    }
+
+    return output;
+}
+
+t_convcode convcode_initialize(char *forward[], char *backward, int N_components)
+{
+
+    // code initialized
+    t_convcode code;
+
+    code.components = N_components;
+
+    // number of shift registers
+    int code_memory = strlen(backward);
+    code.memory = code_memory;
+
+    // initialize connection arrays
+    int **fwd_con = malloc(N_components * sizeof(int*));
+    int *bwd_con = malloc(code_memory*sizeof(int));
+
+    // convert input strings to arrays
+    for (int i = 0; i < N_components; i++) {
+        fwd_con[i] = malloc((code_memory+1) * sizeof(int));
+
+        int j = 0;
+        for (; j < code_memory; j++) {
+            fwd_con[i][j] = forward[i][j] - '0';
+            bwd_con[j] = backward[j] - '0';
+        }
+        fwd_con[i][j] = forward[i][j] - '0';
+    }
+
+    code.forward_connections = fwd_con;
+    code.backward_connections = bwd_con;
+
+    int N_states = 2 << (code_memory - 1);
+    int **neighbors = malloc(N_states * sizeof(int*));
+
+    // populate lookup table for state-update function
+    // and create neighbors array
+    int **next_state = malloc(N_states * sizeof(int*));
+    for (int i = 0; i < N_states; i++) {
+        // initialize to 0
+        neighbors[i] = calloc(2, sizeof(int));
+    }
+
+    for (int i = 0; i < N_states; i++) {
+       next_state[i] = malloc(2 * sizeof(int));
+
+       int updated0 = convcode_stateupdate(i, 0, code);
+       next_state[i][0] = updated0;
+
+
+       // save to neighbords array, use minus sign is input is 0
+       // plus sign if input is 1. check whether it's possible to
+       // write by checking if it's content is zero.
+       // Exploit the fact that in binary codes a state only
+       // has two neighbors
+       if (!neighbors[updated0][0])
+            neighbors[updated0][0] = -(i + 1);
+       else
+            neighbors[updated0][1] = -(i + 1);
+
+       int updated1 = convcode_stateupdate(i, 1, code);
+       next_state[i][1] = updated1;
+
+       if (!neighbors[updated1][0])
+            neighbors[updated1][0] = i + 1;
+       else
+            neighbors[updated1][1] = i + 1;
+    }
+
+    code.next_state = next_state;
+    code.neighbors = neighbors;
+
+
+    // populate output function lookup table
+    int ***output;
+    output = malloc(N_states * sizeof(int**));
+    for (int i = 0; i < N_states; i++) {
+        output[i] = malloc(2*sizeof(int*));
+        for (int j = 0; j < 2; j++) {
+            output[i][j] = convcode_output(i, j, code);
+        }
+    }
+    code.output = output;
+
+    return code;
+}
+
+
+void convcode_clear(t_convcode code)
+{
+    for (int i = 0; i < code.components; i++) {
+        /* printf("Component %d \t Address %p\n", i, code.forward_connections[i]); */
+        free(code.forward_connections[i]);
+        free(code.next_state[i]);
+        free(code.neighbors[i]);
+    }
+
+    free(code.forward_connections);
+    free(code.backward_connections);
+    free(code.next_state);
+    free(code.neighbors);
+}
+
+int* convcode_encode(int *packet, int packet_length, t_convcode code)
+{
+    // add support for puncturing patterns?
+    int encoded_length = (packet_length + code.memory) * code.components;
+    int *encoded_packet = malloc(encoded_length * sizeof *encoded_packet);
+
+    int state = 0;
+
+    for (int i = 0; i < packet_length; i++)
+    {
+        int current_bit = packet[i];
+        int *output = code.output[state][current_bit];
+        state = code.next_state[state][current_bit];
+
+        for (int c = 0; c < code.components; c++)
+        {
+            int out = output[c];
+            encoded_packet[code.components * i + c] = output[c];
+        }
+    }
+
+    // add trellis termination
+    for (int i = packet_length; i < packet_length + code.memory; i++)
+    {
+        int input = 0;
+
+        // input is equal to the feedback part in order to inject zeros into the registers
+        for (int j = 0; j < code.memory; j++)
+            input = (input + code.backward_connections[j]*get_bit(state, code.memory - 1 - j)) % 2;
+
+        int *output = code.output[state][input];
+        state = code.next_state[state][input];
+
+        for (int c = 0; c < code.components; c++)
+        {
+            int out = output[c];
+            encoded_packet[code.components * i + c] = out;
+        }
+    }
+
+    return encoded_packet;
+}
+
+int* convcode_decode(double *received, int length, t_convcode code)
+{
+    int N_states = 2 << (code.memory - 1);
+    int packet_length = length / code.components - code.memory;
     int *decoded_packet = malloc(packet_length * sizeof *decoded_packet);
 
-    int Ns = (int) pow(2, code.memory); // number of states
 
-    int *data_matrix = malloc(Ns*packet_length*2 * sizeof *data_matrix);
+    // allocate matrix containing survivor sequences and metric vector
+    double *metric = malloc(N_states * sizeof *metric);
+    int **data_matrix;
+    data_matrix = malloc(N_states * sizeof(int*));
 
-    //initialize metric array
-    double *metric = malloc(Ns * sizeof *metric);
-    for (int i = 0; i < Ns; i++)
-        metric[i] = 1e9;
-
-    int *output0 = malloc(code.n* sizeof *output0);
-    int *output1 = malloc(code.n* sizeof *output1);
-    void (*output_function)(int, double, int*) = code.output_function;
-
-    for (int k = 0; k < packet_length; k++)
+    for (int i = 0; i < N_states; i++ )
     {
-        double *tmp_metric = calloc(Ns, sizeof *tmp_metric);
-        double min_metric = 0;
-        for(int s = 0; s < Ns; s++)
-        {
+        data_matrix[i] = malloc((packet_length + code.memory)* sizeof(int*));
+        metric[i] = 1e6; // should be Infinity
+    }
 
-            double mincost = 0;
-            int minindex = 0;
+    // trellis starts at state 0
+    metric[0] = 0;
 
-            int n0 = code.neighbors[s][0][0];
-            int u0 = code.neighbors[s][0][1];
+    for (int k = 0; k < packet_length + code.memory; k++) {
 
-            int n1 = code.neighbors[s][1][0];
-            int u1 = code.neighbors[s][1][1];
+        /* printf("Iteration %d\t Received symbols:", k); */
+        // get received symbol
+        double *rho = malloc(code.components * sizeof *rho);
+        for (int r = 0; r < code.components; r++) {
+           rho[r] = received[k*code.components + r];
+           /* printf("\t%f ", rho[r]); */
+        }
+        /* printf("\n"); */
 
-            (*output_function)(n0, u0, output0);
-            (*output_function)(n1, u1, output1);
+        double *tmp_metric = malloc(N_states * sizeof *tmp_metric);
+        for (int s = 0; s < N_states; s++) {
 
-            double pathcost0 = 0;
-            double pathcost1 = 0;
+            /* printf("State: %d\tNeighbors:", s); */
+            // get neighbors
+            int nA = abs(code.neighbors[s][0]) - 1;
+            int uA = (code.neighbors[s][0] > 0);
+            int nB = abs(code.neighbors[s][1]) - 1;
+            int uB = (code.neighbors[s][1] > 0);
 
-            for (int p = 0; p < code.n; p++)
-            {
-                pathcost0 += pow(input[code.n*k + p] - 2*output0[p] + 1,2);
-                pathcost1 += pow(input[code.n*k + p] - 2*output1[p] + 1,2);
+            int *outA = code.output[nA][uA];
+            int *outB = code.output[nB][uB];
+            /* printf("\t(%s, %d) -> [%d%d]", state2str(nA, code.memory), uA, outA[0], outA[1]); */
+            /* printf("\t(%s, %d) -> [%d%d]\n", state2str(nB, code.memory), uB, outB[0], outB[1]); */
+
+
+            double costA = 0;
+            double costB = 0;
+            for (int i = 0; i < code.components; i++) {
+               costA +=  pow(rho[i] - 2*outA[i] + 1, 2);
+               costB +=  pow(rho[i] - 2*outB[i] + 1, 2);
             }
 
-            double cost0 = metric[n0] + pathcost0;
-            double cost1 = metric[n1] + pathcost1;
+            costA += metric[nA];
+            costB += metric[nB];
 
-            if (cost0 < cost1)
-            {
-                mincost = cost0;
-                data_matrix[index3d(s, k, 0, Ns, packet_length, 2)] = n0;
-                data_matrix[index3d(s, k, 1, Ns, packet_length, 2)] = u0;
-            }
-            else
-            {
-                mincost = cost1;
-                data_matrix[index3d(s, k, 0, Ns, packet_length, 2)] = n1;
-                data_matrix[index3d(s, k, 1, Ns, packet_length, 2)] = u1;
-            }
-            min_metric = (mincost < min_metric) ? mincost : min_metric;
-            tmp_metric[s] = mincost;
+            double minimum_cost = (costA > costB) ? costB : costA;
+            int idx = minimum_cost == costB;
+            tmp_metric[s] = minimum_cost;
+
+            data_matrix[s][k] = code.neighbors[s][idx];
+            /* printf("State: %d, idx: %d, Neighbor: %d\n", s, idx, code.neighbors[s][idx]); */
         }
 
-        memcpy(metric, tmp_metric, Ns*sizeof(double));
+        double min_metric = tmp_metric[0];
+        for (int s = 0; s < N_states; s++) {
+           min_metric = (min_metric < tmp_metric[s]) ? min_metric : tmp_metric[s];
+        }
+
+        for (int s = 0; s < N_states; s++){
+            metric[s] = tmp_metric[s] - min_metric;
+        }
+
+        free(rho);
         free(tmp_metric);
     }
 
-    // backtracking
-    int state = 0; //final state is always zero due to trellis termination
-    for (int k = packet_length-1; k >= 0; k--)
+    /* printf("Start backtracking\n"); */
+    // backtrack
+    int state = 0; // trellis is terminated
+    for (int k = packet_length + code.memory - 1; k >= 0; k--)
     {
-        decoded_packet[k] = data_matrix[index3d(state, k, 1, Ns, packet_length, 2)];
-        state = data_matrix[index3d(state, k, 0, Ns, packet_length, 2)];
+       int input = (data_matrix[state][k] > 0);
+       state = abs(data_matrix[state][k]) - 1;
+
+       if (k < packet_length)
+           decoded_packet[k] = input;
     }
 
-    free(data_matrix);
+    // de-allocate metric
     free(metric);
+
+    // de-allocate matrix
+    for (int i = 0; i < N_states; i++ )
+        free(data_matrix[i]);
+    free(data_matrix);
 
     return decoded_packet;
 }
+
+void print_neighbors(t_convcode code)
+{
+    int N_states = 2 << (code.memory - 1);/*{{{*/
+
+    for (int i = 0; i < 34; i++){
+        if (i % 11)
+            printf("-");
+        else
+            printf("+");
+    }
+    printf("\n");
+    printf("|%-10s|%-10s|%-10s|\n", "STATE", "NEIGHBOR", "INPUT");
+    for (int i = 0; i < 34; i++){
+        if (i % 11)
+            printf("-");
+        else
+            printf("+");
+    }
+    printf("\n");
+
+    for (int i = 0; i < N_states; i++) {
+        int s0 = abs(code.neighbors[i][0])-1;
+        int s1 = abs(code.neighbors[i][1])-1;
+
+        int u0 = (code.neighbors[i][0] > 0) ? 1 : 0;
+        int u1 = (code.neighbors[i][1] > 0) ? 1 : 0;
+
+        printf("|%-10s|%-10s|%-10d|\n", state2str(i, code.memory), state2str(s0, code.memory), u0);
+        printf("|%-10s|%-10s|%-10d|\n", state2str(i, code.memory), state2str(s1, code.memory), u1);
+    }
+    for (int i = 0; i < 34; i++){
+        if (i % 11)
+            printf("-");
+        else
+            printf("+");
+    }
+    printf("\n");/*}}}*/
+}
+
+
