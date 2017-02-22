@@ -11,24 +11,12 @@
 #include "libconvcodes.h"
 #include "utilities.h"
 
-#define SIGN(x) (x >= 0) - (x < 0)
-
 // thread routines
 int simulate_awgn(int *packet, double *noise_sequence, int packet_length, double sigma);
 int simulate_conv(int *packet, double *noise_sequence, int packet_length, double sigma, t_convcode code);
 
 int main(int argc, char *argv[])
 {
-    // define code
-    int N_components = 2;
-    char *forward[N_components];
-    forward[0] = "111";
-    forward[1] = "011";
-
-    char *backward;
-    backward = "00";
-    t_convcode code = convcode_initialize(forward, backward, N_components);
-
     // file handling/*{{{*/
     struct tm *time_;
     time_t now = time(NULL);
@@ -77,19 +65,35 @@ int main(int argc, char *argv[])
 
     printf("done.\n");/*}}}*/
 
+    // define code
+    int N_components = 3;
+    char *forward[N_components];
+    forward[0] = "11010";
+    forward[1] = "11101";
+
+    char *backward;
+    backward = "0000";
+
+    double rate = 1.0f/N_components;
+    t_convcode code = convcode_initialize(forward, backward, N_components);
+
     // simulation parameters
     int packet_length = (int) 1e3;
-    int num_packets = (int) 1e3;
+    int num_packets = (int) 1e1;
 
     int num_SNR = 20;
     int min_SNR = -2;
     int max_SNR = 10;
     double *SNR_dB = linspace(min_SNR, max_SNR, num_SNR);
     double *sigma = malloc(num_SNR* sizeof *sigma);
+    double *EbN0 = malloc(num_SNR * sizeof *EbN0);
 
     // get noise std variation from SNR
     for (int i = 0; i < num_SNR; i++)
+    {
         sigma[i] = sqrt(1/ pow(10, SNR_dB[i]/10));
+        EbN0[i] = 1 / (2*rate*pow(sigma[i], 2));
+    }
 
     printf("**************************************************************\n");
     printf("Simulation starting with the following parameters:\n");
@@ -119,15 +123,17 @@ int main(int argc, char *argv[])
 
             printf("Processing packet #%d/%d\n", packet_count, num_packets);
 
-            //double *noise_sequence = randn(0, 1, packet_length);
-            double *noise_seq_coded = randn(0, 1, (packet_length + code.memory)*code.components);
+            double *noise_sequence = randn(0, 1, packet_length);
+            //double *noise_seq_coded = randn(0, 1, (packet_length + code.memory)*code.components);
 
             for (int s = 0; s < num_SNR; s++){
-                errors[s] += simulate_conv(packet, noise_seq_coded, packet_length, sigma[s], code);
+                //errors[s] += simulate_conv(packet, noise_seq_coded, packet_length, sigma[s], code);
+                errors[s] += simulate_awgn(packet, noise_sequence, packet_length, sigma[s]);
             }
 
             free(packet);
-            free(noise_seq_coded);
+            free(noise_sequence);
+            //free(noise_seq_coded);
         }
     }
 
@@ -149,12 +155,10 @@ int main(int argc, char *argv[])
     }
 
     // release allocated memory
-    printf("Releasing memory...");
     free(BER);
     free(errors);
     free(SNR_dB);
     free(sigma);
-    printf("Bye!\n");
 
     return 0;
 }
@@ -165,7 +169,7 @@ int simulate_awgn(int *packet, double *noise_sequence, int packet_length, double
     int errors = 0;/*{{{*/
     for (int i = 0; i < packet_length; i++){
         double received = sigma*noise_sequence[i] + (2*packet[i]-1);
-        errors += (SIGN(received) != packet[i]);
+        errors += (received > 0) != packet[i];
     }
     return errors;/*}}}*/
 }
