@@ -90,6 +90,12 @@
 		<Unit filename="/home/gianluca/CLionProjects/deepspace-turbo/libconvcodes.h">
 			<Option target="deepspace_turbo"/>
 		</Unit>
+		<Unit filename="/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.c">
+			<Option target="deepspace_turbo"/>
+		</Unit>
+		<Unit filename="/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.h">
+			<Option target="deepspace_turbo"/>
+		</Unit>
 		<Unit filename="/home/gianluca/CLionProjects/deepspace-turbo/main.c">
 			<Option target="deepspace_turbo"/>
 		</Unit>

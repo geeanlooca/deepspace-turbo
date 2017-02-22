@@ -4,6 +4,6 @@ set (CMAKE_C_FLAGS "-fopenmp")
 
 set(CMAKE_C_STANDARD 99)
 
-set(SOURCE_FILES main.c utilities.c utilities.h libconvcodes.c libconvcodes.h)
+set(SOURCE_FILES main.c utilities.c utilities.h libconvcodes.c libconvcodes.h libturbocodes.c libturbocodes.h)
 add_executable(deepspace_turbo ${SOURCE_FILES})
 target_link_libraries(deepspace_turbo m)

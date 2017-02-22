@@ -2,6 +2,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/deepspace_turbo.dir/main.c.o"
   "CMakeFiles/deepspace_turbo.dir/utilities.c.o"
   "CMakeFiles/deepspace_turbo.dir/libconvcodes.c.o"
+  "CMakeFiles/deepspace_turbo.dir/libturbocodes.c.o"
   "deepspace_turbo.pdb"
   "deepspace_turbo"
 )

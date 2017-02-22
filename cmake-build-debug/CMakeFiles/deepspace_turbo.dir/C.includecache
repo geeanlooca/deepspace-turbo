@@ -24,6 +24,14 @@ libconvcodes.h
 
 /home/gianluca/CLionProjects/deepspace-turbo/libconvcodes.h
 
+/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.c
+libturbocodes.h
+/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.h
+
+/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.h
+libconvcodes.h
+/home/gianluca/CLionProjects/deepspace-turbo/libconvcodes.h
+
 /home/gianluca/CLionProjects/deepspace-turbo/main.c
 stdio.h
 -
@@ -47,6 +55,8 @@ errno.h
 -
 libconvcodes.h
 /home/gianluca/CLionProjects/deepspace-turbo/libconvcodes.h
+libturbocodes.h
+/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.h
 utilities.h
 /home/gianluca/CLionProjects/deepspace-turbo/utilities.h
 

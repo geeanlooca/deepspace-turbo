@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include "libconvcodes.h"
+#include "libturbocodes.h"
 #include "utilities.h"
 
 // thread routines
@@ -66,20 +67,23 @@ int main(int argc, char *argv[])
     printf("done.\n");/*}}}*/
 
     // define code
-    int N_components = 3;
+    int N_components = 2;
     char *forward[N_components];
     forward[0] = "11010";
     forward[1] = "11101";
+    forward[2] = "10111";
 
     char *backward;
     backward = "0000";
 
     double rate = 1.0f/N_components;
+
+    // initialize code: mandatory call
     t_convcode code = convcode_initialize(forward, backward, N_components);
 
     // simulation parameters
     int packet_length = (int) 1e3;
-    int num_packets = (int) 1e1;
+    int num_packets = (int) 1e4;
 
     int num_SNR = 20;
     int min_SNR = -2;
@@ -95,6 +99,7 @@ int main(int argc, char *argv[])
         EbN0[i] = 1 / (2*rate*pow(sigma[i], 2));
     }
 
+    // print info
     printf("**************************************************************\n");
     printf("Simulation starting with the following parameters:\n");
     printf("(Uncoded) Packet Length: %d\tPacket Number: %d\n", packet_length, num_packets);
@@ -102,8 +107,31 @@ int main(int argc, char *argv[])
     printf("**************************************************************\n\n");
     printf("Press ENTER to start the simulation.\n");
 
-    // simulation loop/*{{{*/
+    // build interleaver
+    int octets = 1;
+    int base = 223;
+    int info_length = base * 8 * octets;
+    int p[8] = {31, 37, 43, 47, 53, 59, 61, 67};
+    int k1 = 8;
+    int k2 = base * octets;
 
+    int *pi = malloc(info_length * sizeof *pi);
+    for (int s = 0; s < info_length; ++s) {
+        int m = (s-1)%2;
+        int i = (int) floor((s-1) / (2 * k2));
+        int j = (int) floor((s-1) / 2 ) - i*k2;
+        int t = (19*i + 1)%(k2/2);
+        int q = t % 8 + 1;
+        int c = (p[q-1]*j + 21*m) % k2;
+        pi[s] = 2*(t + c*(k1/2) + 1) - m;
+    }
+
+
+
+
+    return 0;
+
+    // simulation loop
     // initialize seed of RNG
     srand(time(NULL));
 
@@ -123,17 +151,17 @@ int main(int argc, char *argv[])
 
             printf("Processing packet #%d/%d\n", packet_count, num_packets);
 
-            double *noise_sequence = randn(0, 1, packet_length);
-            //double *noise_seq_coded = randn(0, 1, (packet_length + code.memory)*code.components);
+            //double *noise_sequence = randn(0, 1, packet_length);
+            double *noise_seq_coded = randn(0, 1, (packet_length + code.memory)*code.components);
 
             for (int s = 0; s < num_SNR; s++){
-                //errors[s] += simulate_conv(packet, noise_seq_coded, packet_length, sigma[s], code);
-                errors[s] += simulate_awgn(packet, noise_sequence, packet_length, sigma[s]);
+                errors[s] += simulate_conv(packet, noise_seq_coded, packet_length, sigma[s], code);
+                //errors[s] += simulate_awgn(packet, noise_sequence, packet_length, sigma[s]);
             }
 
             free(packet);
-            free(noise_sequence);
-            //free(noise_seq_coded);
+            //free(noise_sequence);
+            free(noise_seq_coded);
         }
     }
 
@@ -142,7 +170,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < num_SNR; i++)
         BER[i] = (double) errors[i]/(num_packets*packet_length);
 
-    printf("\nSimulation completed.\n\n");/*}}}*/
+    printf("\nSimulation completed.\n\n");
 
     // save results
     char *headers[] = {"SNR", "BER"};

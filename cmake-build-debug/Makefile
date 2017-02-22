@@ -150,6 +150,33 @@ libconvcodes.c.s:
 	$(MAKE) -f CMakeFiles/deepspace_turbo.dir/build.make CMakeFiles/deepspace_turbo.dir/libconvcodes.c.s
 .PHONY : libconvcodes.c.s
 
+libturbocodes.o: libturbocodes.c.o
+
+.PHONY : libturbocodes.o
+
+# target to build an object file
+libturbocodes.c.o:
+	$(MAKE) -f CMakeFiles/deepspace_turbo.dir/build.make CMakeFiles/deepspace_turbo.dir/libturbocodes.c.o
+.PHONY : libturbocodes.c.o
+
+libturbocodes.i: libturbocodes.c.i
+
+.PHONY : libturbocodes.i
+
+# target to preprocess a source file
+libturbocodes.c.i:
+	$(MAKE) -f CMakeFiles/deepspace_turbo.dir/build.make CMakeFiles/deepspace_turbo.dir/libturbocodes.c.i
+.PHONY : libturbocodes.c.i
+
+libturbocodes.s: libturbocodes.c.s
+
+.PHONY : libturbocodes.s
+
+# target to generate assembly for a file
+libturbocodes.c.s:
+	$(MAKE) -f CMakeFiles/deepspace_turbo.dir/build.make CMakeFiles/deepspace_turbo.dir/libturbocodes.c.s
+.PHONY : libturbocodes.c.s
+
 main.o: main.c.o
 
 .PHONY : main.o
@@ -216,6 +243,9 @@ help:
 	@echo "... libconvcodes.o"
 	@echo "... libconvcodes.i"
 	@echo "... libconvcodes.s"
+	@echo "... libturbocodes.o"
+	@echo "... libturbocodes.i"
+	@echo "... libturbocodes.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
