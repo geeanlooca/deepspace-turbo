@@ -3,9 +3,7 @@
 //
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <string.h>
-#include <float.h>
 #include <math.h>
 #include "libconvcodes.h"
 
