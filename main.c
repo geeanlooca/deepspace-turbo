@@ -13,6 +13,25 @@
 #include "utilities.h"
 #include <getopt.h>
 
+#define RESET   "\033[0m"
+#define BLACK   "\033[30m"      /* Black */
+#define RED     "\033[31m"      /* Red */
+#define GREEN   "\033[32m"      /* Green */
+#define YELLOW  "\033[33m"      /* Yellow */
+#define BLUE    "\033[34m"      /* Blue */
+#define MAGENTA "\033[35m"      /* Magenta */
+#define CYAN    "\033[36m"      /* Cyan */
+#define WHITE   "\033[37m"      /* White */
+#define BOLDBLACK   "\033[1m\033[30m"      /* Bold Black */
+#define BOLDRED     "\033[1m\033[31m"      /* Bold Red */
+#define BOLDGREEN   "\033[1m\033[32m"      /* Bold Green */
+#define BOLDYELLOW  "\033[1m\033[33m"      /* Bold Yellow */
+#define BOLDBLUE    "\033[1m\033[34m"      /* Bold Blue */
+#define BOLDMAGENTA "\033[1m\033[35m"      /* Bold Magenta */
+#define BOLDCYAN    "\033[1m\033[36m"      /* Bold Cyan */
+#define BOLDWHITE   "\033[1m\033[37m"      /* Bold White */
+
+
 
 // thread routines
 int simulate_awgn(int *packet, double *noise_sequence, int packet_length, double sigma);
@@ -27,7 +46,7 @@ int main(int argc, char *argv[])
 
     // default simulation parameters
     int packet_length = (int) 1e3;
-    int num_packets = (int) 1e4k;
+    int num_packets = (int) 1e4;
 
     int SNR_points = 10;
     float min_SNR = -4;
@@ -36,7 +55,7 @@ int main(int argc, char *argv[])
     char filename[PATH_MAX];
 
 
-    // arguments parser
+    // parse command line arguments
     int c;
     while(1)
     {
@@ -52,12 +71,13 @@ int main(int argc, char *argv[])
                         {"min-SNR",         required_argument,  0,  'm'},
                         {"max-SNR",         required_argument,  0,  'M'},
                         {"SNR-points",      required_argument,  0,  'n'},
+                        {"help",            no_argument,        0,  'h'},
                         {0, 0, 0, 0}
                 };
 
         int option_index = 0;
 
-        c = getopt_long(argc, argv, "yl:c:C:m:M:f:b:o:n:", long_options, &option_index);
+        c = getopt_long(argc, argv, "yhl:c:C:m:M:f:b:o:n:", long_options, &option_index);
 
         if (c == -1)
             break;
@@ -71,6 +91,42 @@ int main(int argc, char *argv[])
                 if (optarg)
                     printf (" with arg %s", optarg);
                 printf ("\n");
+                break;
+
+            case 'c':
+                num_packets = (int) strtof(optarg, NULL);
+                break;
+
+            case 'l':
+                packet_length = (int) strtof(optarg, NULL);
+                break;
+
+            case 'h':
+
+                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-y / --skip-confirm", "skip confirmation dialog after"
+                        "summarizing simulation parameters. Useful when automating simulations.");
+
+                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-h / --help", "print this help dialog.");
+
+                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-o / --output FILENAME", "save results in "
+                        "a comma separated forma in FILENAME. If this argument is not used, the results will be saved in "
+                        "a file named with the current date and time.");
+
+                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-c / --packet-count INTEGER", "set the number of packets to encode/decode."
+                        "INTEGER can be given in exponential notation i.e. 1e4 for 10000 packets.");
+
+                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-l / --packet-length INTEGER", "set the number of information bits"
+                        "in a packet. Exponential notation can be used.");
+
+                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-m / --min-SNR FLOAT", "set the lower extreme of the SNR range to test. ");
+
+                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-M / --max-SNR FLOAT", "set the upper extreme of the SNR range to test. ");
+
+                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-n / --SNR-points INTEGER", "set the number of linearly spaced points "
+                        "inside the interval [min-SNR, max-SNR]");
+
+                exit(EXIT_SUCCESS);
+
                 break;
 
             case 'm':
@@ -101,20 +157,41 @@ int main(int argc, char *argv[])
 
     // check parameters
     if (min_SNR >= max_SNR){
-        printf("The value of the minimum SNR to test is greater than the maximum SNR (%f > %f).\n", min_SNR, max_SNR);
+        printf(BOLDRED "The value of the minimum SNR to test is greater than the maximum SNR (%f > %f).\n" RESET, min_SNR, max_SNR);
         exit(EXIT_FAILURE);
     }
 
     if (SNR_points <= 0){
-        printf("Number of SNR points to test must be strictly positive.\n");
+        printf(BOLDRED "Number of SNR points to test must be strictly positive.\n" RESET);
         exit(EXIT_FAILURE);
     }
 
-    // print table
+    if (num_packets <= 0){
+        printf(BOLDRED "Number of packets to test must be strictly positive.\n" RESET);
+        exit(EXIT_FAILURE);
+    }
+
+    if (packet_length <= 0){
+        printf(BOLDRED "Number of information bits in a packet must be strictly positive.\n" RESET);
+        exit(EXIT_FAILURE);
+    }
+
+    // handle filename
+    if (!filename_flag){
+        // generate timestamp filename.
+        struct tm *time_;
+        time_t now = time(NULL);
+        time_ = localtime(&now);
+        strftime(filename, sizeof(filename), "%Y-%m-%d_%H-%M-%S.csv", time_);
+
+        printf("Output filename not provided. File" BOLDMAGENTA "\'%s\'" RESET " will be used. \n", filename);
+    }
+
+    // print simulation parameters
     char header[PATH_MAX];
     int w = 15;
     sprintf(header, "|%-*s|%-*s|%-*s|%-*s|%-*s|", w, "Packet length", w, "Packet count",
-                w, "Min SNR [dB]", w, "Max SNR [dB]", w, "SNR points");
+            w, "Min SNR [dB]", w, "Max SNR [dB]", w, "SNR points");
 
     int header_length = (int)strlen(header);
     for (int l = 0; l < header_length; ++l) {
@@ -139,84 +216,42 @@ int main(int argc, char *argv[])
     }
     printf("\n");
 
-
     // confirmation
     char x = (skipconfirm_flag) ? 'y' : 0;
-    printf("Start simulation? y/n: ");
+    printf("\nStart simulation? y/n: ");
     while (x != 'y' && x != 'n')
         x = getchar();
 
     if (x == 'n'){
-        printf("\nSimulation aborted.\n");
+        printf(BOLDRED"\nSimulation aborted.\n" RESET);
         exit(EXIT_SUCCESS);
     }
 
-    printf("\nSimulation starting...\n");
+    printf("\nSimulation starting...\n\n");
 
-    exit(EXIT_FAILURE);
-
-
-    // file handling/*{{{*/
-    struct tm *time_;
-    time_t now = time(NULL);
-    time_ = localtime(&now);
-    char buff[PATH_MAX];
-    ssize_t len = readlink("/proc/self/exe", buff, PATH_MAX) ;
-
-    if (len == -1){
-        printf("Error while determining the path of the binary file.\n");
-        return -1;
-    }
-
-    // remove filename from path
-    ssize_t i  = len - 1;
-    for (; i >= 0 && buff[i] != '/'; i--);
-
-    char truncated_path[PATH_MAX];
-    strncpy(truncated_path, buff, (int)i+1);
-
-    //append "results" directory to current executable file
-    strcat(truncated_path, "results/");
-
-    // create directory
-    int err = mkdir(truncated_path, S_IRWXU);
-    int errsv = errno;
-    /* printf("About to create directory %s\n", truncated_path); */
-    if(errsv != EEXIST && err == -1){
-        perror("Error while creating the output directory");
-        exit(EXIT_FAILURE);
-    }
-
-    // determine filename
-    strftime(filename, sizeof(filename), "uncoded_%Y-%m-%d_%H-%M-%S.dat", time_);
-
-    // full path
-    strcat(truncated_path, filename);
-
-    printf("Trying to create output file...");
-    FILE *file = fopen(truncated_path, "w");
-
+    // create output file
+    FILE *file = fopen(filename, "w");
     if (!file){
-        perror("\nSomething went wrong. Couldn't create output file");
+        perror("Something went wrong. Couldn't create output file");
         exit(EXIT_FAILURE);
     }
 
-    printf("done.\n");/*}}}*/
-
-
+    // allocate memory to store parameters and results
     double *SNR_dB = linspace(min_SNR, max_SNR, SNR_points);
     double *sigma = malloc(SNR_points* sizeof *sigma);
     double *EbN0 = malloc(SNR_points * sizeof *EbN0);
+    long int *errors = calloc(SNR_points, sizeof(long int));
+    double *BER = malloc(SNR_points*sizeof *BER);
 
     // define code
     int N_components = 2;
     char *forward[N_components];
-    forward[0] = "101";
-    forward[1] = "101";
+    forward[0] = "1101";
+    forward[1] = "1011";
 //    forward[3] = "11111";
 
     char *backward;
-    backward = "00";
+    backward = "000";
 
     double rate = 1.0f/N_components;
 
@@ -232,15 +267,6 @@ int main(int argc, char *argv[])
     // initialize code: mandatory call
     t_convcode code = convcode_initialize(forward, backward, N_components);
 
-
-
-    // print info
-    printf("**************************************************************\n");
-    printf("Simulation starting with the following parameters:\n");
-    printf("(Uncoded) Packet Length: %d\tPacket Number: %d\n", packet_length, num_packets);
-    printf("Minimum SNR: %f dB\tMax SNR: %f dB\tSNR points: %d\n", min_SNR, max_SNR, SNR_points);
-    printf("**************************************************************\n\n");
-    printf("Press ENTER to start the simulation.\n");
 
     // build interleaver
 //    int octets = 1;
@@ -286,8 +312,8 @@ int main(int argc, char *argv[])
     srand(time(NULL));
 
     // number of erroneous bits for each tested packet
-    long int *errors = calloc(SNR_points, sizeof(long int));
     int packet_count = 0;
+    int interval = (int) num_packets * 0.05 ;
 
     omp_set_num_threads(4);
     #pragma omp parallel
@@ -299,7 +325,8 @@ int main(int argc, char *argv[])
             // generate packet
             int *packet = randbits(packet_length);
 
-            printf("Processing packet #%d/%d\n", packet_count, num_packets);
+            if (! (packet_count % interval))
+                printf("Processing packet #%d/%d\n", packet_count, num_packets);
 
             //double *noise_sequence = randn(0, 1, packet_length);
             double *noise_seq_coded = randn(0, 1, (packet_length + code.memory)*code.components);
@@ -316,20 +343,21 @@ int main(int argc, char *argv[])
     }
 
     // compute BER
-    double *BER = malloc(SNR_points*sizeof *BER);
+
     for (int i = 0; i < SNR_points; i++)
         BER[i] = (double) errors[i]/(num_packets*packet_length);
 
-    printf("\nSimulation completed.\n\n");
+    printf(BOLDGREEN "\nSimulation completed.\n\n" RESET);
 
     // save results
     char *headers[] = {"SNR", "BER"};
-    printf("Saving results...\n");
     save_data(SNR_dB, BER, headers, SNR_points, file);
     fclose(file);
 
+    // print results
+    printf(BOLDYELLOW "%20s%20s\n" RESET, "SNR [dB]", "BER");
     for (int j = 0; j < SNR_points; ++j) {
-       printf("%20f dB%20.4e\n", SNR_dB[j], BER[j]);
+       printf("%20f%20.4e\n", SNR_dB[j], BER[j]);
     }
 
     // release allocated memory
