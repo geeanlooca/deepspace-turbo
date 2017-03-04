@@ -45,12 +45,14 @@ int main(int argc, char *argv[])
     int filename_flag = 0;
 
     // default simulation parameters
-    int packet_length = (int) 1e3;
+    int packet_length = (int) 1e2;
     int num_packets = (int) 1e4;
 
     int SNR_points = 10;
     float min_SNR = -4;
     float max_SNR = 6;
+
+    int cores = 4;
 
     char filename[PATH_MAX];
 
@@ -97,6 +99,10 @@ int main(int argc, char *argv[])
                 num_packets = (int) strtof(optarg, NULL);
                 break;
 
+            case 'C':
+                cores = (int) strtof(optarg, NULL);
+                break;
+
             case 'l':
                 packet_length = (int) strtof(optarg, NULL);
                 break;
@@ -104,19 +110,19 @@ int main(int argc, char *argv[])
             case 'h':
 
                 printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-y / --skip-confirm", "skip confirmation dialog after"
-                        "summarizing simulation parameters. Useful when automating simulations.");
+                        " summarizing simulation parameters. Useful when automating simulations.");
 
                 printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-h / --help", "print this help dialog.");
 
                 printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-o / --output FILENAME", "save results in "
-                        "a comma separated forma in FILENAME. If this argument is not used, the results will be saved in "
+                        "a comma-separated format in FILENAME. If this argument is not used, the results will be saved in "
                         "a file named with the current date and time.");
 
                 printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-c / --packet-count INTEGER", "set the number of packets to encode/decode."
-                        "INTEGER can be given in exponential notation i.e. 1e4 for 10000 packets.");
+                        " INTEGER can be given in exponential notation i.e. 1e4 for 10000 packets.");
 
                 printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-l / --packet-length INTEGER", "set the number of information bits"
-                        "in a packet. Exponential notation can be used.");
+                        " in a packet. Exponential notation can be used.");
 
                 printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-m / --min-SNR FLOAT", "set the lower extreme of the SNR range to test. ");
 
@@ -293,27 +299,26 @@ int main(int argc, char *argv[])
 //
 //    interleaver[0] = identity;
 //    interleaver[1] = pi;
-//    int mask[4] = {1, 2, 3, 4};
-//
-//    t_convcode codes[2] = {code, code};
+//    int mask[4] = {0, 1, 2, 3};
+
+    t_convcode codes[2] = {code, code};
 //    t_turbocode turbo = turbo_initialize(2, codes, interleaver, info_length, mask, 4, 4);
-//
-//    // create packet
+
+    // create packet
 //    int *pkt = randbits(info_length);
 //    turbo_interleave(pkt, info_length, turbo);
+
+
+
+//    exit(EXIT_SUCCESS);
 //
-//    print_array_int(pkt, info_length);
-//    print_array_int(turbo.memory_block[0], info_length);
-//    print_array_int(turbo.memory_block[1], info_length);
-
-
     // simulation loop
     // initialize seed of RNG
     srand(time(NULL));
 
     // number of erroneous bits for each tested packet
     int packet_count = 0;
-    int interval = (int) num_packets * 0.05 ;
+    int interval = (int) num_packets * 0.05 + 1;
 
     omp_set_num_threads(4);
     #pragma omp parallel
@@ -392,6 +397,7 @@ int simulate_conv(int *packet, double *noise_sequence, int packet_length, double
         received[i] = (2*encoded[i] - 1) + sigma*noise_sequence[i];
 
     int *decoded = convcode_decode(received, encoded_length, code);
+//    int *decoded = convcode_extrinsic(received, encoded_length, NULL ,code, sigma*sigma);
     for (int j = 0; j < packet_length; ++j) {
         errors += (decoded[j] != packet[j]);
     }

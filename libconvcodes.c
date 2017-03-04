@@ -114,7 +114,7 @@ t_convcode convcode_initialize(char *forward[], char *backward, int N_components
        next_state[i][0] = updated0;
 
 
-       // save to neighbords array, use minus sign is input is 0
+       // save to neighbords array, use minus sign if input is 0
        // plus sign if input is 1. check whether it's possible to
        // write by checking if it's content is zero.
        // Exploit the fact that in binary codes a state only
@@ -351,4 +351,169 @@ void print_neighbors(t_convcode code)
     printf("\n");/*}}}*/
 }
 
+int * convcode_extrinsic(double *received, double length, double **a_priori, t_convcode code, double noise_variance)
+{
+
+    int N_states = 2 << (code.memory - 1);
+    int packet_length = (int) length / code.components - code.memory;
+
+    // copy a priori probabilities on local array
+    double **app = malloc(2 * sizeof(double*));
+
+    for (int i = 0; i < 2; ++i) {
+        app[i] = malloc((packet_length + code.memory) * sizeof *app);
+    }
+
+    for (int i = 0; i < packet_length; ++i) {
+
+        if (a_priori == NULL){
+            app[0][i] = 0.5;
+            app[1][i] = 0.5;
+        }else{
+            app[0][i] = a_priori[0][i];
+            app[1][i] = a_priori[1][i];
+        }
+    }
+
+    for (int j = 0; j < code.memory; ++j) {
+        app[0][packet_length + j] = 0.5;
+        app[1][packet_length + j] = 0.5;
+    }
+
+    // initialize backward messages
+    double **backward = malloc(N_states * sizeof(double*));
+    for (int k = 0; k < N_states; ++k) {
+        backward[k] = calloc((packet_length + code.memory), sizeof(double));
+    }
+    backward[0][packet_length + code.memory - 1] = 1;
+
+    double *rho = malloc(code.components * sizeof *rho);
+
+    for (int i = packet_length + code.memory - 2; i >= 0; i--) {
+
+        for (int j = 0; j < code.components; ++j)
+            rho[j] = received[code.components*(i+1) + j];
+
+        for (int s = 0; s < N_states; ++s) {
+            double B = 0;
+            for (int u = 0; u < 2; ++u) {
+                int next = code.next_state[s][u];
+                int *out = code.output[s][u];
+
+                double g = 0;
+                // compute g
+                for (int j = 0; j < code.components; ++j) {
+                    double sym = rho[j];
+                    g += pow(sym - (2*out[j] - 1),2);
+                }
+
+                B += app[u][i+1] * backward[next][i+1] * exp(-g/(2*noise_variance));
+            }
+            backward[s][i] = B;
+        }
+    }
+
+    // initialize forward messages
+    double **forward = malloc(N_states * sizeof(double*));
+    for (int k = 0; k < N_states; ++k) {
+        forward[k] = calloc((packet_length + code.memory), sizeof(double));
+    }
+    forward[0][0] = 1;
+
+    for (int i = 1; i < packet_length + code.memory; ++i) {
+
+        for (int j = 0; j < code.components; ++j)
+            rho[j] = received[code.components*(i-1) + j];
+
+        for (int s = 0; s < N_states; ++s) {
+
+            double F = 0;
+
+            // pass through each neighbour
+            int *neigh = code.neighbors[s];
+            for (int n = 0; n < 2; ++n) {
+                int state = abs(neigh[n]) - 1;
+                int input = neigh[n] > 0;
+
+                int *out = code.output[state][input];
+
+                double g = 0;
+                // compute g
+                for (int j = 0; j < code.components; ++j) {
+                    g += pow(rho[j] - (2*out[j] - 1),2);
+                }
+
+                F += app[input][i-1] * forward[state][i-1] * exp(-g/(2*noise_variance));
+            }
+
+            forward[s][i] = F;
+        }
+    }
+
+    // initialize extrinsic messages
+    double **extrinsic = malloc(2 * sizeof(double*));
+
+    for (int k = 0; k < 2; ++k) {
+        extrinsic[k] = malloc((packet_length * code.memory) * sizeof(double));
+    }
+
+    for (int i = 0; i < packet_length + code.memory; ++i) {
+        for (int j = 0; j < code.components; ++j)
+            rho[j] = received[code.components*i + j];
+
+
+        for (int u = 0; u < 2; ++u) {
+            double E = 0;
+            for (int s = 0; s < N_states; ++s) {
+
+                int state = code.next_state[s][u];
+
+                double g = 0;
+
+                int *out = code.output[s][u];
+                for (int j = 0; j < code.components; ++j)
+                    g += pow(rho[j] - (2*out[j] - 1),2);
+
+                double fwd = forward[s][i];
+                double bwd = backward[state][i];
+                E +=  fwd * bwd * exp(-g/(2*noise_variance));
+            }
+
+            extrinsic[u][i] = E;
+        }
+    }
+
+    // decision
+    int *decoded = malloc(packet_length * sizeof *decoded);
+    for (int i = 0; i < packet_length; ++i) {
+        double one = app[1][i]*extrinsic[1][i];
+        double zero = app[0][i]*extrinsic[0][i];
+        decoded[i] =  one > zero;
+    }
+
+    // free memory
+    for (int l = 0; l < N_states; ++l) {
+        free(backward[l]);
+    }
+    free(backward);
+
+    for (int l = 0; l < 2; ++l) {
+        free(extrinsic[l]);
+    }
+    free(extrinsic);
+
+    for (int l = 0; l < N_states; ++l) {
+        free(forward[l]);
+    }
+    free(forward);
+
+    for (int l = 0; l < 2; ++l) {
+        free(app[l]);
+    }
+
+    free(app);
+    free(rho);
+
+    return decoded;
+}
 
