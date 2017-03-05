@@ -14,6 +14,7 @@ void turbo_interleave(int *packet, int length, t_turbocode code)
     }
 }
 
+
 int * turbo_encode(int *packet, int packet_length, t_turbocode code)
 {
     turbo_interleave(packet, packet_length, code);

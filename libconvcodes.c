@@ -29,9 +29,8 @@ static int convcode_stateupdate(int state, int input, t_convcode code)
     int memory = code.memory;
 
     int first_reg = 0;
-    for (int i = 0; i < memory; i++) {
+    for (int i = 0; i < memory; i++)
         first_reg = (first_reg + code.backward_connections[i]*get_bit(state, memory - 1 - i)) % 2;
-    }
 
     // shift the content of the registers
     int new_state = state >> 1;
@@ -57,9 +56,8 @@ static int *convcode_output(int state, int input, t_convcode code)
     for (int c = 0; c < code.components; c++) {
         output[c] = code.forward_connections[c][0]*first_reg;
 
-        for (int i = 0; i < code.memory; i++) {
+        for (int i = 0; i < code.memory; i++)
             output[c] = (output[c] + code.forward_connections[c][i+1]*get_bit(state, code.memory - 1 - i)) % 2;
-        }
     }
 
     return output;
@@ -142,9 +140,8 @@ t_convcode convcode_initialize(char *forward[], char *backward, int N_components
     output = malloc(N_states * sizeof(int**));
     for (int i = 0; i < N_states; i++) {
         output[i] = malloc(2*sizeof(int*));
-        for (int j = 0; j < 2; j++) {
+        for (int j = 0; j < 2; j++)
             output[i][j] = convcode_output(i, j, code);
-        }
     }
     code.output = output;
 
@@ -201,10 +198,8 @@ int* convcode_encode(int *packet, int packet_length, t_convcode code)
         state = code.next_state[state][input];
 
         for (int c = 0; c < code.components; c++)
-        {
-            int out = output[c];
-            encoded_packet[code.components * i + c] = out;
-        }
+            encoded_packet[code.components * i + c] = output[c];
+
     }
 
     return encoded_packet;
@@ -216,7 +211,6 @@ int* convcode_decode(double *received, int length, t_convcode code)
     int packet_length = length / code.components - code.memory;
     int *decoded_packet = malloc(packet_length * sizeof *decoded_packet);
 
-
     // allocate matrix containing survivor sequences and metric vector
     double *metric = malloc(N_states * sizeof *metric);
     int **data_matrix;
@@ -224,28 +218,23 @@ int* convcode_decode(double *received, int length, t_convcode code)
 
     for (int i = 0; i < N_states; i++ )
     {
-        data_matrix[i] = malloc((packet_length + code.memory)* sizeof(int*));
+        data_matrix[i] = malloc((packet_length + code.memory)* sizeof(int));
         metric[i] = 1e6; // should be Infinity
     }
 
     // trellis starts at state 0
     metric[0] = 0;
 
+    double *tmp_metric = malloc(N_states * sizeof *tmp_metric);
+    double *rho = malloc(code.components * sizeof *rho);
     for (int k = 0; k < packet_length + code.memory; k++) {
 
-        /* printf("Iteration %d\t Received symbols:", k); */
         // get received symbol
-        double *rho = malloc(code.components * sizeof *rho);
-        for (int r = 0; r < code.components; r++) {
+        for (int r = 0; r < code.components; r++)
            rho[r] = received[k*code.components + r];
-           /* printf("\t%f ", rho[r]); */
-        }
-        /* printf("\n"); */
 
-        double *tmp_metric = malloc(N_states * sizeof *tmp_metric);
         for (int s = 0; s < N_states; s++) {
 
-            /* printf("State: %d\tNeighbors:", s); */
             // get neighbors
             int nA = abs(code.neighbors[s][0]) - 1;
             int uA = (code.neighbors[s][0] > 0);
@@ -254,9 +243,6 @@ int* convcode_decode(double *received, int length, t_convcode code)
 
             int *outA = code.output[nA][uA];
             int *outB = code.output[nB][uB];
-            /* printf("\t(%s, %d) -> [%d%d]", state2str(nA, code.memory), uA, outA[0], outA[1]); */
-            /* printf("\t(%s, %d) -> [%d%d]\n", state2str(nB, code.memory), uB, outB[0], outB[1]); */
-
 
             double costA = 0;
             double costB = 0;
@@ -273,23 +259,19 @@ int* convcode_decode(double *received, int length, t_convcode code)
             tmp_metric[s] = minimum_cost;
 
             data_matrix[s][k] = code.neighbors[s][idx];
-            /* printf("State: %d, idx: %d, Neighbor: %d\n", s, idx, code.neighbors[s][idx]); */
         }
 
+        // find minimum
         double min_metric = tmp_metric[0];
-        for (int s = 0; s < N_states; s++) {
+        for (int s = 0; s < N_states; s++)
            min_metric = (min_metric < tmp_metric[s]) ? min_metric : tmp_metric[s];
-        }
 
-        for (int s = 0; s < N_states; s++){
+        // normalize
+        for (int s = 0; s < N_states; s++)
             metric[s] = tmp_metric[s] - min_metric;
-        }
 
-        free(rho);
-        free(tmp_metric);
     }
 
-    /* printf("Start backtracking\n"); */
     // backtrack
     int state = 0; // trellis is terminated
     for (int k = packet_length + code.memory - 1; k >= 0; k--)
@@ -301,10 +283,11 @@ int* convcode_decode(double *received, int length, t_convcode code)
            decoded_packet[k] = input;
     }
 
-    // de-allocate metric
+    // free memory
     free(metric);
+    free(rho);
+    free(tmp_metric);
 
-    // de-allocate matrix
     for (int i = 0; i < N_states; i++ )
         free(data_matrix[i]);
     free(data_matrix);
@@ -353,28 +336,19 @@ void print_neighbors(t_convcode code)
 
 int * convcode_extrinsic(double *received, double length, double **a_priori, t_convcode code, double noise_variance)
 {
-
     int N_states = 2 << (code.memory - 1);
     int packet_length = (int) length / code.components - code.memory;
 
     // copy a priori probabilities on local array
     double **app = malloc(2 * sizeof(double*));
 
-    for (int i = 0; i < 2; ++i) {
+    for (int i = 0; i < 2; ++i)
         app[i] = malloc((packet_length + code.memory) * sizeof *app);
-    }
 
-    for (int i = 0; i < packet_length; ++i) {
+    for (int i = 0; i < packet_length; ++i)
+        app[0][i] = (a_priori == NULL) ?  0.5 : a_priori[0][i];
 
-        if (a_priori == NULL){
-            app[0][i] = 0.5;
-            app[1][i] = 0.5;
-        }else{
-            app[0][i] = a_priori[0][i];
-            app[1][i] = a_priori[1][i];
-        }
-    }
-
+    // trailing symbols
     for (int j = 0; j < code.memory; ++j) {
         app[0][packet_length + j] = 0.5;
         app[1][packet_length + j] = 0.5;
@@ -396,16 +370,14 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
 
         for (int s = 0; s < N_states; ++s) {
             double B = 0;
+
             for (int u = 0; u < 2; ++u) {
                 int next = code.next_state[s][u];
                 int *out = code.output[s][u];
 
                 double g = 0;
-                // compute g
-                for (int j = 0; j < code.components; ++j) {
-                    double sym = rho[j];
-                    g += pow(sym - (2*out[j] - 1),2);
-                }
+                    for (int j = 0; j < code.components; ++j)
+                    g += pow(rho[j]- (2*out[j] - 1),2);
 
                 B += app[u][i+1] * backward[next][i+1] * exp(-g/(2*noise_variance));
             }
@@ -439,9 +411,8 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
 
                 double g = 0;
                 // compute g
-                for (int j = 0; j < code.components; ++j) {
+                for (int j = 0; j < code.components; ++j)
                     g += pow(rho[j] - (2*out[j] - 1),2);
-                }
 
                 F += app[input][i-1] * forward[state][i-1] * exp(-g/(2*noise_variance));
             }
@@ -494,23 +465,18 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
     // free memory
     for (int l = 0; l < N_states; ++l) {
         free(backward[l]);
-    }
-    free(backward);
-
-    for (int l = 0; l < 2; ++l) {
-        free(extrinsic[l]);
-    }
-    free(extrinsic);
-
-    for (int l = 0; l < N_states; ++l) {
         free(forward[l]);
     }
+    free(backward);
     free(forward);
+
 
     for (int l = 0; l < 2; ++l) {
         free(app[l]);
+        free(extrinsic[l]);
     }
 
+    free(extrinsic);
     free(app);
     free(rho);
 
