@@ -248,15 +248,15 @@ int main(int argc, char *argv[])
     long int *errors = calloc(SNR_points, sizeof(long int));
     double *BER = malloc(SNR_points*sizeof *BER);
 
-    // define code
-    int N_components = 2;
+    // define first code
+    int N_components = 3;
     char *forward[N_components];
-    forward[0] = "1101";
-    forward[1] = "1011";
-//    forward[3] = "11111";
+    forward[0] = "10011";
+    forward[1] = "10101";
+    forward[2] = "11111";
 
     char *backward;
-    backward = "000";
+    backward = "0011";
 
     double rate = 1.0f/N_components;
 
@@ -271,6 +271,17 @@ int main(int argc, char *argv[])
 
     // initialize code: mandatory call
     t_convcode code = convcode_initialize(forward, backward, N_components);
+
+
+    // define second code
+    N_components = 1;
+    char *forward_2[N_components];
+    forward_2[0] = "11011";
+
+    char *backward_2;
+    backward_2 = "0011";
+
+    t_convcode code2 = convcode_initialize(forward_2, backward_2, N_components);
 
 
     // build interleaver
@@ -292,21 +303,19 @@ int main(int argc, char *argv[])
         int t = (19*i + 1) % (k1/2);
         int q = t % 8 + 1;
         int c = (p[q-1]*j + 21*m) % k2;
-        pi[s-1] = 2*(t + c*(k1/2) + 1) - m;
+        pi[s-1] = 2*(t + c*(k1/2) + 1) - m - 1;
         identity[s-1] = s-1;
     }
 
     interleaver[0] = identity;
     interleaver[1] = pi;
 
-    print_array_int(pi, info_length);
-
-    t_convcode codes[2] = {code, code};
+    t_convcode codes[2] = {code, code2};
     t_turbocode turbo = turbo_initialize(codes, 2, interleaver, info_length);
 
     // create packet
     int *pkt = randbits(info_length);
-    turbo_encode(pkt, turbo);
+    int *encoded = turbo_encode(pkt, turbo);
 
     exit(EXIT_SUCCESS);
 //

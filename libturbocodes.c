@@ -13,10 +13,7 @@ int **turbo_interleave(int *packet, t_turbocode code)
     for (int i = 0; i < code.components; ++i) {
         interleaved_messages[i] = malloc(code.packet_length * sizeof(int));
         for (int j = 0; j < code.packet_length; ++j) {
-
-            int pi = code.interleaving_vectors[i][j];
-            int content = packet[pi-1];
-            interleaved_messages[i][j] = content;
+            interleaved_messages[i][j] = packet[code.interleaving_vectors[i][j]];
         }
     }
 
@@ -30,19 +27,14 @@ int *turbo_encode(int *packet, t_turbocode code)
 
     // reference to encoded messages
     int **conv_encoded = malloc(code.components * sizeof(int*));
-    int turbo_length = 0;
+    int turbo_length = code.encoded_length;
 
     for (int i = 0; i < code.components; ++i) {
         // get corresponding (possibly) interleaved input message
         t_convcode cc = code.inner_codes[i];
         int *interleaved_pkt = interleaved_packets[i];
-        print_array_int(interleaved_pkt, code.packet_length);
-        int conv_length = cc.components * (code.packet_length + cc.memory);
-        conv_encoded[i] = convcode_encode(packet, code.packet_length, cc);
 
-        printf("Output of CC #%d: \n", i);
-        print_array_int(conv_encoded[i], conv_length);
-        turbo_length += conv_length;
+        conv_encoded[i] = convcode_encode(interleaved_pkt, code.packet_length, cc);
     }
 
     int *turbo_encoded = malloc(turbo_length * sizeof *turbo_encoded);
@@ -67,6 +59,7 @@ int *turbo_encode(int *packet, t_turbocode code)
         // when c = 0 the first codeword is complete
         cw = c == 0  ? cw+1 : cw;
     }
+
     return turbo_encoded;
 }
 
@@ -77,6 +70,17 @@ t_turbocode turbo_initialize(t_convcode *codes, int components, int **interleave
     code.inner_codes = codes;
     code.packet_length = packet_length;
     code.interleaving_vectors = interleaver;
+
+    // compute encoded length
+    int turbo_length = 0;
+
+    for (int i = 0; i < code.components; ++i) {
+        // get corresponding (possibly) interleaved input message
+        t_convcode cc = code.inner_codes[i];
+        turbo_length += cc.components * (code.packet_length + cc.memory);
+    }
+
+    code.encoded_length = turbo_length;
 
     return code;
 }
