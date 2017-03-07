@@ -45,13 +45,12 @@ int main(int argc, char *argv[])
     int filename_flag = 0;
 
     // default simulation parameters
-    int packet_length = (int) 1e2;
-    int num_packets = (int) 1e4;
+    int packet_length = (int) 1e4;
+    int num_packets = (int) 1e2;
 
     int SNR_points = 10;
     float min_SNR = -4;
     float max_SNR = 6;
-
     int cores = 4;
 
     char filename[PATH_MAX];
@@ -348,7 +347,6 @@ int main(int argc, char *argv[])
     }
 
     // compute BER
-
     for (int i = 0; i < SNR_points; i++)
         BER[i] = (double) errors[i]/(num_packets*packet_length);
 
@@ -361,9 +359,8 @@ int main(int argc, char *argv[])
 
     // print results
     printf(BOLDYELLOW "%20s%20s\n" RESET, "SNR [dB]", "BER");
-    for (int j = 0; j < SNR_points; ++j) {
+    for (int j = 0; j < SNR_points; ++j)
        printf("%20f%20.4e\n", SNR_dB[j], BER[j]);
-    }
 
     // release allocated memory
     free(BER);
@@ -396,15 +393,13 @@ int simulate_conv(int *packet, double *noise_sequence, int packet_length, double
     for (int i = 0; i < encoded_length; i++)
         received[i] = (2*encoded[i] - 1) + sigma*noise_sequence[i];
 
-    int *decoded = convcode_decode(received, encoded_length, code);
-//    int *decoded = convcode_extrinsic(received, encoded_length, NULL ,code, sigma*sigma);
-    for (int j = 0; j < packet_length; ++j) {
+//    int *decoded = convcode_decode(received, encoded_length, code);
+    int *decoded = convcode_extrinsic(received, encoded_length, NULL, code, sigma*sigma);
+    for (int j = 0; j < packet_length; ++j)
         errors += (decoded[j] != packet[j]);
-    }
 
     free(decoded);
     free(encoded);
     free(received);
     return errors;/*}}}*/
 }
-
