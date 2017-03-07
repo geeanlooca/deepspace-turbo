@@ -274,42 +274,41 @@ int main(int argc, char *argv[])
 
 
     // build interleaver
-//    int octets = 1;
-//    int base = 10;
-//    int info_length = base * 8 * octets;
-//    int p[8] = {31, 37, 43, 47, 53, 59, 61, 67};
-//    int k1 = 8;
-//    int k2 = base * octets;
-//
-//    int **interleaver = malloc(2 * sizeof(int*));
-//    int *pi = malloc(info_length * sizeof *pi);
-//    int *identity = malloc(info_length * sizeof *identity);
-//
-//    for (int s = 0; s < info_length; ++s) {
-//        int m = (s-1)%2;
-//        int i = (int) floor((s-1) / (2 * k2));
-//        int j = (int) floor((s-1) / 2 ) - i*k2;
-//        int t = (19*i + 1)%(k2/2);
-//        int q = t % 8 + 1;
-//        int c = (p[q-1]*j + 21*m) % k2;
-//        pi[s] = 2*(t + c*(k1/2) + 1) - m;
-//        identity[s] = s;
-//    }
-//
-//    interleaver[0] = identity;
-//    interleaver[1] = pi;
-//    int mask[4] = {0, 1, 2, 3};
+    int octets = 1;
+    int base = 10;
+    int info_length = base * 8 * octets;
+    int p[8] = {31, 37, 43, 47, 53, 59, 61, 67};
+    int k1 = 8;
+    int k2 = base * octets;
+
+    int **interleaver = malloc(2 * sizeof(int*));
+    int *pi = malloc(info_length * sizeof *pi);
+    int *identity = malloc(info_length * sizeof *identity);
+
+    for (int s = 0; s < info_length; ++s) {
+        int m = (s-1)%2;
+        int i = (int) floor((s-1) / (2 * k2));
+        int j = (int) floor((s-1) / 2 ) - i*k2;
+        int t = (19*i + 1)%(k2/2);
+        int q = t % 8 + 1;
+        int c = (p[q-1]*j + 21*m) % k2;
+        pi[s] = 2*(t + c*(k1/2) + 1) - m;
+        identity[s] = s;
+    }
+
+    interleaver[0] = identity;
+    interleaver[1] = pi;
+    int mask[4] = {0, 1, 2, 3};
 
     t_convcode codes[2] = {code, code};
-//    t_turbocode turbo = turbo_initialize(2, codes, interleaver, info_length, mask, 4, 4);
+    t_turbocode turbo = turbo_initialize(2, codes, interleaver, info_length);
 
     // create packet
-//    int *pkt = randbits(info_length);
-//    turbo_interleave(pkt, info_length, turbo);
+    int *pkt = randbits(info_length);
+    turbo_encode(pkt, info_length, turbo);
 
 
-
-//    exit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 //
     // simulation loop
     // initialize seed of RNG
