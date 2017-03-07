@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g
+CFLAGS = -g -std=gnu99
 OBJDIR = ./build
 BINDIR = ./bin
 LIBS = -lm -fopenmp
