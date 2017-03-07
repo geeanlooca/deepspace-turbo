@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 
     // build interleaver
     int octets = 1;
-    int base = 10;
+    int base = 223;
     int info_length = base * 8 * octets;
     int p[8] = {31, 37, 43, 47, 53, 59, 61, 67};
     int k1 = 8;
@@ -285,28 +285,28 @@ int main(int argc, char *argv[])
     int *pi = malloc(info_length * sizeof *pi);
     int *identity = malloc(info_length * sizeof *identity);
 
-    for (int s = 0; s < info_length; ++s) {
-        int m = (s-1)%2;
+    for (int s = 1; s <= info_length; ++s) {
+        int m = (s-1) % 2;
         int i = (int) floor((s-1) / (2 * k2));
-        int j = (int) floor((s-1) / 2 ) - i*k2;
-        int t = (19*i + 1)%(k2/2);
+        int j = (int) floor((s-1) / 2) - i*k2;
+        int t = (19*i + 1) % (k1/2);
         int q = t % 8 + 1;
         int c = (p[q-1]*j + 21*m) % k2;
-        pi[s] = 2*(t + c*(k1/2) + 1) - m;
-        identity[s] = s;
+        pi[s-1] = 2*(t + c*(k1/2) + 1) - m;
+        identity[s-1] = s-1;
     }
 
     interleaver[0] = identity;
     interleaver[1] = pi;
-    int mask[4] = {0, 1, 2, 3};
+
+    print_array_int(pi, info_length);
 
     t_convcode codes[2] = {code, code};
-    t_turbocode turbo = turbo_initialize(2, codes, interleaver, info_length);
+    t_turbocode turbo = turbo_initialize(codes, 2, interleaver, info_length);
 
     // create packet
     int *pkt = randbits(info_length);
-    turbo_encode(pkt, info_length, turbo);
-
+    turbo_encode(pkt, turbo);
 
     exit(EXIT_SUCCESS);
 //
@@ -386,7 +386,6 @@ int simulate_conv(int *packet, double *noise_sequence, int packet_length, double
     int errors = 0;/*{{{*/
     int *encoded = convcode_encode(packet, packet_length, code);
     int encoded_length = code.components*(packet_length + code.memory);
-
 
     double *received = malloc(encoded_length * sizeof *received);
     for (int i = 0; i < encoded_length; i++)

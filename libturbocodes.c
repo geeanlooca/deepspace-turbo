@@ -7,21 +7,26 @@
 #include "utilities.h"
 #include <stdio.h>
 
-void turbo_interleave(int *packet, int length, t_turbocode code)
+int **turbo_interleave(int *packet, t_turbocode code)
 {
-
-    printf("Applying interleaving function\n");
+    int **interleaved_messages = malloc(code.components * sizeof(int*));
     for (int i = 0; i < code.components; ++i) {
+        interleaved_messages[i] = malloc(code.packet_length * sizeof(int));
         for (int j = 0; j < code.packet_length; ++j) {
-            code.memory_block[i][j] = packet[code.interleaving_vectors[i][j]];
+
+            int pi = code.interleaving_vectors[i][j];
+            int content = packet[pi-1];
+            interleaved_messages[i][j] = content;
         }
     }
+
+    return interleaved_messages;
 }
 
 
-int * turbo_encode(int *packet, int packet_length, t_turbocode code)
+int *turbo_encode(int *packet, t_turbocode code)
 {
-    turbo_interleave(packet, packet_length, code);
+    int **interleaved_packets = turbo_interleave(packet, code);
 
     // reference to encoded messages
     int **conv_encoded = malloc(code.components * sizeof(int*));
@@ -30,12 +35,13 @@ int * turbo_encode(int *packet, int packet_length, t_turbocode code)
     for (int i = 0; i < code.components; ++i) {
         // get corresponding (possibly) interleaved input message
         t_convcode cc = code.inner_codes[i];
-        int *interleaved_pkt = code.memory_block[i];
-        int conv_length = cc.components * (packet_length + cc.memory);
-        conv_encoded[i] = convcode_encode(interleaved_pkt, packet_length, cc);
+        int *interleaved_pkt = interleaved_packets[i];
+        print_array_int(interleaved_pkt, code.packet_length);
+        int conv_length = cc.components * (code.packet_length + cc.memory);
+        conv_encoded[i] = convcode_encode(packet, code.packet_length, cc);
 
         printf("Output of CC #%d: \n", i);
-        /* print_array_int(conv_encoded[i], conv_length); */
+        print_array_int(conv_encoded[i], conv_length);
         turbo_length += conv_length;
     }
 
@@ -64,22 +70,13 @@ int * turbo_encode(int *packet, int packet_length, t_turbocode code)
     return turbo_encoded;
 }
 
-t_turbocode turbo_initialize(int components, t_convcode *codes, int **interleaver, int packet_length)
+t_turbocode turbo_initialize(t_convcode *codes, int components, int **interleaver, int packet_length)
 {
     t_turbocode code;
     code.components = components;
     code.inner_codes = codes;
     code.packet_length = packet_length;
     code.interleaving_vectors = interleaver;
-
-    printf("allocate memory block to store messages to feed to the convolutional encoders \n");
-    // allocate memory block to store messages to feed to the convolutional encoders
-    int **interleaved_messages = malloc(code.components * sizeof(int*));
-    for (int i = 0; i < code.components; ++i) {
-        interleaved_messages[i] = malloc(code.packet_length * sizeof(int));
-    }
-
-    code.memory_block = interleaved_messages;
 
     return code;
 }

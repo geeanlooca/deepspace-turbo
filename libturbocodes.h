@@ -12,17 +12,12 @@ typedef struct str_turbocode{
     int components;
     int **interleaving_vectors;
     int packet_length;
-    int **memory_block;
-    int *mask;
-    int *code_mask;
-    int mask_length;
-    int k;
 } t_turbocode;
 
-void turbo_interleave(int *packet, int length, t_turbocode code);
+int **turbo_interleave(int *packet, t_turbocode code);
 
-int * turbo_encode(int *packet, int packet_length, t_turbocode code);
+int *turbo_encode(int *packet, t_turbocode code);
 
-t_turbocode turbo_initialize(int components, t_convcode *codes, int **interleaver, int packet_length);
+t_turbocode turbo_initialize(t_convcode *codes, int components, int **interleaver, int packet_length);
 
 #endif //DEEPSPACE_TURBO_LIBTURBOCODES_H
