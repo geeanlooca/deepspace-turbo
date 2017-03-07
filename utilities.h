@@ -24,5 +24,6 @@ double *scalar_multiply(double *array, unsigned int length, double scalar);
 
 int save_data(double *x, double *y, char *header[], unsigned int length, FILE *file);
 
+double max_array(double *array, int size);
 
 #endif //DEEPSPACE_TURBO_UTILITIES_H

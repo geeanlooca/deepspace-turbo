@@ -113,3 +113,12 @@ int save_data(double *x, double *y, char *header[], unsigned int length, FILE *f
     for (int i = 0; i < length; i++)
         fprintf(file, "%.12f,%.12f\n", x[i], y[i]);/*}}}*/
 }
+
+double max_array(double *array, int size)
+{
+    double max = array[0];
+    for (int i = 0; i < size; ++i)
+        max = (array[i] > max) ? array[i] : max;
+
+    return max;
+}
