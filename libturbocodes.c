@@ -67,26 +67,6 @@ t_turbocode turbo_initialize(int components, t_convcode *codes, int **interleave
     }
 
     code.memory_block = interleaved_messages;
-    code.mask = mask;
-    code.mask_length = mask_length;
-    code.k = k;
-
-    // determine code mask from provided output mask
-    int *code_mask = malloc(mask_length * sizeof *code_mask);
-
-    for (int j = 0; j < mask_length; ++j) {
-        int c = 0;
-        int cumulative = code.inner_codes[c].components;
-
-        while ( mask[j] >= cumulative) {
-            cumulative += code.inner_codes[++c].components;
-        }
-
-        mask[j] -= (c > 0) ? cumulative : 0;
-        code_mask[j] = c;
-    }
-
-    code.code_mask = code_mask;
 
     return code;
 }
