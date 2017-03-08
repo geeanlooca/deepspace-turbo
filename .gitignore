@@ -1,11 +1,7 @@
 *.dat
 *.out
+*.csv
 **/.idea/workspace.xml
 **/.idea/tasks.xml
-**/bin
-**/build
-**/cmake-build-debug
-*.o
-*.c.o
-*.csv
-
+/bin
+/build
