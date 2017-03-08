@@ -7,6 +7,29 @@
 #include "utilities.h"
 #include <stdio.h>
 
+
+t_turbocode turbo_initialize(t_convcode *codes, int components, int **interleaver, int packet_length)
+{
+    t_turbocode code;
+    code.components = components;
+    code.inner_codes = codes;
+    code.packet_length = packet_length;
+    code.interleaving_vectors = interleaver;
+
+    // compute encoded length
+    int turbo_length = 0;
+
+    for (int i = 0; i < code.components; ++i) {
+        // get corresponding (possibly) interleaved input message
+        t_convcode cc = code.inner_codes[i];
+        turbo_length += cc.components * (code.packet_length + cc.memory);
+    }
+
+    code.encoded_length = turbo_length;
+
+    return code;
+}
+
 int **turbo_interleave(int *packet, t_turbocode code)
 {
     int **interleaved_messages = malloc(code.components * sizeof(int*));
@@ -60,27 +83,40 @@ int *turbo_encode(int *packet, t_turbocode code)
         cw = c == 0  ? cw+1 : cw;
     }
 
+    for (int i = 0; i < code.components; i++) {
+       free(interleaved_packets[i]) ;
+    }
+
+    free(interleaved_packets);
+
     return turbo_encoded;
 }
 
-t_turbocode turbo_initialize(t_convcode *codes, int components, int **interleaver, int packet_length)
+int *turbo_decode(double *received, t_turbocode code)
 {
-    t_turbocode code;
-    code.components = components;
-    code.inner_codes = codes;
-    code.packet_length = packet_length;
-    code.interleaving_vectors = interleaver;
-
-    // compute encoded length
-    int turbo_length = 0;
-
-    for (int i = 0; i < code.components; ++i) {
-        // get corresponding (possibly) interleaved input message
+    // serial to parallel
+    int *lengths = malloc(code.components * sizeof  *lengths);
+    double **streams = malloc(code.components * sizeof(double*));
+    for (int i = 0; i < code.components; i++) {
         t_convcode cc = code.inner_codes[i];
-        turbo_length += cc.components * (code.packet_length + cc.memory);
+        lengths[i] = cc.components * (code.packet_length + cc.memory);
+        streams[i] = malloc(lengths[i] * sizeof(double*));
     }
 
-    code.encoded_length = turbo_length;
+    int k = 0;
+    int c = 0;
+    int cw = 0;
+    while (k < code.encoded_length) {
+        t_convcode cc = code.inner_codes[c];
+        for (int i = 0; i < cc.components; i++)
+           streams[c][cw*cc.components + i] = received[k++];
 
-    return code;
+        c = (c + 1) % code.components;
+        cw = (c == 0) ? cw + 1 : cw;
+    }
+
+    for (int i = 0; i < code.components; i++) {
+        free(streams[i]);
+    }
+    free(streams);
 }

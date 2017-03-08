@@ -21,4 +21,6 @@ int *turbo_encode(int *packet, t_turbocode code);
 
 t_turbocode turbo_initialize(t_convcode *codes, int components, int **interleaver, int packet_length);
 
+int *turbo_decode(double* received, t_turbocode code);
+
 #endif //DEEPSPACE_TURBO_LIBTURBOCODES_H
