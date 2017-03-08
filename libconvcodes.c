@@ -345,16 +345,9 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
     for (int i = 0; i < 2; ++i)
         app[i] = malloc((packet_length + code.memory) * sizeof *app);
 
-    for (int i = 0; i < packet_length; ++i){
+    for (int i = 0; i < packet_length + code.memory; ++i){
         app[0][i] = (a_priori == NULL) ?  log(0.5) : a_priori[0][i];
         app[1][i] = (a_priori == NULL) ?  log(0.5) : a_priori[1][i];
-    }
-
-
-    // trailing symbols
-    for (int j = 0; j < code.memory; ++j) {
-        app[0][packet_length + j] = log(0.5);
-        app[1][packet_length + j] = log(0.5);
     }
 
     // initialize backward messages
