@@ -14,19 +14,19 @@ static int get_bit(int num, int position)
 
 static char* state2str(int state, int memory)
 {
-    char *str_state = malloc(memory + 1);
+    char *str_state = malloc(memory + 1);/*{{{*/
     str_state[memory] = '\0';
 
     for (int i = 0; i < memory; i++) {
        str_state[i] = '0' + get_bit(state, memory - 1 - i);
     }
 
-    return str_state;
+    return str_state;/*}}}*/
 }
 
 static int convcode_stateupdate(int state, int input, t_convcode code)
 {
-    int memory = code.memory;
+    int memory = code.memory;/*{{{*/
 
     int first_reg = 0;
     for (int i = 0; i < memory; i++)
@@ -41,12 +41,12 @@ static int convcode_stateupdate(int state, int input, t_convcode code)
     // switch last bit
     new_state ^= (-first_reg ^ new_state) & (1 << (memory - 1));
 
-    return new_state;
+    return new_state;/*}}}*/
 }
 
 static int *convcode_output(int state, int input, t_convcode code)
 {
-    int *output = calloc(code.components, sizeof(int));
+    int *output = calloc(code.components, sizeof(int));/*{{{*/
     int new_state = convcode_stateupdate(state, input, code);
 
     // get content of first register of the new state
@@ -60,12 +60,12 @@ static int *convcode_output(int state, int input, t_convcode code)
             output[c] = (output[c] + code.forward_connections[c][i+1]*get_bit(state, code.memory - 1 - i)) % 2;
     }
 
-    return output;
+    return output;/*}}}*/
 }
 
 t_convcode convcode_initialize(char *forward[], char *backward, int N_components)
 {
-
+/*{{{*/
     // code initialized
     t_convcode code;
 
@@ -145,13 +145,12 @@ t_convcode convcode_initialize(char *forward[], char *backward, int N_components
     }
     code.output = output;
 
-    return code;
+    return code;/*}}}*/
 }
-
 
 void convcode_clear(t_convcode code)
 {
-    for (int i = 0; i < code.components; i++) {
+    for (int i = 0; i < code.components; i++) {/*{{{*/
         /* printf("Component %d \t Address %p\n", i, code.forward_connections[i]); */
         free(code.forward_connections[i]);
         free(code.next_state[i]);
@@ -161,12 +160,12 @@ void convcode_clear(t_convcode code)
     free(code.forward_connections);
     free(code.backward_connections);
     free(code.next_state);
-    free(code.neighbors);
+    free(code.neighbors);/*}}}*/
 }
 
 int* convcode_encode(int *packet, int packet_length, t_convcode code)
 {
-    // add support for puncturing patterns?
+    // add support for puncturing patterns?/*{{{*/
     int encoded_length = (packet_length + code.memory) * code.components;
     int *encoded_packet = malloc(encoded_length * sizeof *encoded_packet);
 
@@ -202,12 +201,12 @@ int* convcode_encode(int *packet, int packet_length, t_convcode code)
 
     }
 
-    return encoded_packet;
+    return encoded_packet;/*}}}*/
 }
 
 int* convcode_decode(double *received, int length, t_convcode code)
 {
-    int N_states = 2 << (code.memory - 1);
+    int N_states = 2 << (code.memory - 1);/*{{{*/
     int packet_length = length / code.components - code.memory;
     int *decoded_packet = malloc(packet_length * sizeof *decoded_packet);
 
@@ -292,7 +291,7 @@ int* convcode_decode(double *received, int length, t_convcode code)
         free(data_matrix[i]);
     free(data_matrix);
 
-    return decoded_packet;
+    return decoded_packet;/*}}}*/
 }
 
 void print_neighbors(t_convcode code)
@@ -336,11 +335,12 @@ void print_neighbors(t_convcode code)
 
 int * convcode_extrinsic(double *received, double length, double **a_priori, t_convcode code, double noise_variance)
 {
-    int N_states = 2 << (code.memory - 1);
+    int N_states = 2 << (code.memory - 1);/*{{{*/
     int packet_length = (int) length / code.components - code.memory;
 
+    long int threshold = 1e10;
     // copy a priori probabilities on local array
-    double **app = malloc(2 * sizeof(double*));
+    double **app = malloc(2 * sizeof(double*));/*{{{*/
 
     for (int i = 0; i < 2; ++i)
         app[i] = malloc((packet_length + code.memory) * sizeof *app);
@@ -348,13 +348,13 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
     for (int i = 0; i < packet_length + code.memory; ++i){
         app[0][i] = (a_priori == NULL) ?  log(0.5) : a_priori[0][i];
         app[1][i] = (a_priori == NULL) ?  log(0.5) : a_priori[1][i];
-    }
+    }/*}}}*/
 
     // initialize backward messages
-    double **backward = malloc(N_states * sizeof(double*));
+    double **backward = malloc(N_states * sizeof(double*));/*{{{*/
     for (int k = 0; k < N_states; ++k) {
         backward[k] = malloc((packet_length + code.memory) * sizeof(double));
-        backward[k][packet_length + code.memory - 1] = -1e10;
+        backward[k][packet_length + code.memory - 1] = -threshold;
     }
 
     backward[0][packet_length + code.memory - 1] = 0;
@@ -367,7 +367,7 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
             rho[j] = received[code.components*(i+1) + j];
 
         for (int s = 0; s < N_states; ++s) {
-            double B = -1e10;
+            double B = -threshold;
 
             for (int u = 0; u < 2; ++u) {
                 int next = code.next_state[s][u];
@@ -390,13 +390,13 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
 
         for (int s = 0; s < N_states; ++s)
             backward[s][i] -= max;
-    }
+    }/*}}}*/
 
     // initialize forward messages
-    double **forward = malloc(N_states * sizeof(double*));
+    double **forward = malloc(N_states * sizeof(double*));/*{{{*/
     for (int k = 0; k < N_states; ++k) {
         forward[k] = malloc((packet_length + code.memory) * sizeof(double));
-        forward[k][0] = -1e10;
+        forward[k][0] = -threshold;
     }
     forward[0][0] = 0;
 
@@ -408,7 +408,7 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
 
         for (int s = 0; s < N_states; ++s) {
 
-            double F = -1e10;
+            double F = -threshold;
 
             // pass through each neighbour
             int *neigh = code.neighbors[s];
@@ -437,10 +437,10 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
 
         for (int s = 0; s < N_states; ++s)
             forward[s][i] -= max;
-    }
+    }/*}}}*/
 
     // initialize extrinsic messages
-    double **extrinsic = malloc(2 * sizeof(double*));
+    double **extrinsic = malloc(2 * sizeof(double*));/*{{{*/
 
     for (int k = 0; k < 2; ++k) {
         extrinsic[k] = malloc((packet_length * code.memory) * sizeof(double));
@@ -452,7 +452,7 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
 
 
         for (int u = 0; u < 2; ++u) {
-            double E = -1e10;
+            double E = -threshold;
             for (int s = 0; s < N_states; ++s) {
 
                 int state = code.next_state[s][u];
@@ -470,18 +470,18 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
 
             extrinsic[u][i] = E;
         }
-    }
+    }/*}}}*/
 
     // decision
-    int *decoded = malloc(packet_length * sizeof *decoded);
+    int *decoded = malloc(packet_length * sizeof *decoded);/*{{{*/
     for (int i = 0; i < packet_length; ++i) {
         double one = app[1][i] + extrinsic[1][i];
         double zero = app[0][i] + extrinsic[0][i];
         decoded[i] =  one > zero;
-    }
+    }/*}}}*/
 
     // free memory
-    for (int l = 0; l < N_states; ++l) {
+    for (int l = 0; l < N_states; ++l) {/*{{{*/
         free(backward[l]);
         free(forward[l]);
     }
@@ -496,16 +496,14 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
 
     free(extrinsic);
     free(app);
-    free(rho);
+    free(rho);/*}}}*/
 
-    return decoded;
+    return decoded;/*}}}*/
 }
 
 static double exp_sum(double a, double b)
 {
-    double max = (a > b) ? a : b;
-    double diff = a-b;
-    double abs_val = diff > 0 ? diff : -diff;
-    return max + log(1 + exp(-abs_val));
+    double diff = a-b;/*{{{*/
+    return (a > b) ? a : b + log(1 + exp(-diff > 0 ? diff : -diff));/*}}}*//*}}}*/
 }
 
