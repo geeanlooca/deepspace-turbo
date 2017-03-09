@@ -57,9 +57,6 @@ int *turbo_encode(int *packet, t_turbocode code)
         int *interleaved_pkt = interleaved_packets[i];
 
         conv_encoded[i] = convcode_encode(interleaved_pkt, code.packet_length, cc);
-        int conv_length = cc.components * (code.packet_length + cc.memory);
-        for (int j = 0; j < conv_length; j++)
-            conv_encoded[i][j] = i;
     }
 
     int *turbo_encoded = malloc(turbo_length * sizeof *turbo_encoded);
