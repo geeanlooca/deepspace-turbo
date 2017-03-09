@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include "utilities.h"
 #include <stdio.h>
+#include <math.h>
 
 
 t_turbocode turbo_initialize(t_convcode *codes, int components, int **interleaver, int packet_length)
@@ -34,10 +35,10 @@ static int **turbo_interleave(int *packet, t_turbocode code)
 {
     int **interleaved_messages = malloc(code.components * sizeof(int*));/*{{{*/
     for (int i = 0; i < code.components; ++i) {
-        interleaved_messages[i] = malloc(code.packet_length * sizeof(int));/*{{{*/
+        interleaved_messages[i] = malloc(code.packet_length * sizeof(int));
         for (int j = 0; j < code.packet_length; ++j) {
             interleaved_messages[i][j] = packet[code.interleaving_vectors[i][j]];
-        }/*}}}*/
+        }
     }
 
     return interleaved_messages;/*}}}*/
@@ -87,7 +88,7 @@ int *turbo_encode(int *packet, t_turbocode code)
     return turbo_encoded;/*}}}*/
 }
 
-int *turbo_decode(double *received, t_turbocode code)
+int *turbo_decode(double *received, int iterations, double noise_variance, t_turbocode code)
 {
     // serial to parallel/*{{{*/
     int *lengths = malloc(code.components * sizeof  *lengths);/*{{{*/
@@ -111,9 +112,28 @@ int *turbo_decode(double *received, t_turbocode code)
 
     int *turbo_decoded = malloc(code.packet_length * sizeof *turbo_decoded);
 
+    // initial messages
+    /* double **messages = malloc(2 * sizeof(double *)); */
+    /* for (int i = 0; i < 2; i++) { */
+    /*    messages[i] = malloc(code.packet_length * sizeof(double)); */
+    /*    for (int j = 0; j < code.packet_length; j++) { */
+    /*        messages[i][j] = log(0.5); */
+    /*    } */
+    /* } */
+
+    double **messages = NULL;
+
+    for (int i = 0; i < iterations; i++) {
+        for (int c = 0; c < code.components; c++) {
+            t_convcode cc = code.inner_codes[c];
+            convcode_extrinsic(streams[c], lengths[c], messages, cc, noise_variance);
+        }
+    }
+
     for (int i = 0; i < code.components; i++)
         free(streams[i]);
     free(streams);
 
+    //length of the 
     return turbo_decoded; /*}}}*/
 }

@@ -333,7 +333,7 @@ void print_neighbors(t_convcode code)
     printf("\n");/*}}}*/
 }
 
-int * convcode_extrinsic(double *received, double length, double **a_priori, t_convcode code, double noise_variance)
+double **convcode_extrinsic(double *received, double length, double **a_priori, t_convcode code, double noise_variance)
 {
     int N_states = 2 << (code.memory - 1);/*{{{*/
     int packet_length = (int) length / code.components - code.memory;
@@ -345,10 +345,17 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
     for (int i = 0; i < 2; ++i)
         app[i] = malloc((packet_length + code.memory) * sizeof *app);
 
-    for (int i = 0; i < packet_length + code.memory; ++i){
+    for (int i = 0; i < packet_length; ++i){
         app[0][i] = (a_priori == NULL) ?  log(0.5) : a_priori[0][i];
         app[1][i] = (a_priori == NULL) ?  log(0.5) : a_priori[1][i];
-    }/*}}}*/
+    }
+    
+    for (int i = 0; i < code.memory; i++) {
+        app[0][packet_length + i] = log(0.5);
+        app[1][packet_length + i] = log(0.5);
+    }
+    
+    /*}}}*/
 
     // initialize backward messages
     double **backward = malloc(N_states * sizeof(double*));/*{{{*/
@@ -469,16 +476,17 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
             }
 
             extrinsic[u][i] = E;
+            a_priori[u][i] = E;
         }
     }/*}}}*/
 
     // decision
-    int *decoded = malloc(packet_length * sizeof *decoded);/*{{{*/
-    for (int i = 0; i < packet_length; ++i) {
-        double one = app[1][i] + extrinsic[1][i];
-        double zero = app[0][i] + extrinsic[0][i];
-        decoded[i] =  one > zero;
-    }/*}}}*/
+    /* int *decoded = malloc(packet_length * sizeof *decoded); */
+    /* for (int i = 0; i < packet_length; ++i) { */
+    /*     double one = app[1][i] + extrinsic[1][i]; */
+    /*     double zero = app[0][i] + extrinsic[0][i]; */
+    /*     decoded[i] =  one > zero; */
+    /* } */
 
     // free memory
     for (int l = 0; l < N_states; ++l) {/*{{{*/
@@ -488,17 +496,17 @@ int * convcode_extrinsic(double *received, double length, double **a_priori, t_c
     free(backward);
     free(forward);
 
-
-    for (int l = 0; l < 2; ++l) {
-        free(app[l]);
-        free(extrinsic[l]);
+    for (int i = 0; i < 2; i++) {
+        free(extrinsic[i]);
     }
-
     free(extrinsic);
+
     free(app);
     free(rho);/*}}}*/
 
-    return decoded;/*}}}*/
+    return NULL;
+
+    /*}}}*/
 }
 
 static double exp_sum(double a, double b)

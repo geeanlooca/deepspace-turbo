@@ -283,7 +283,6 @@ int main(int argc, char *argv[])
 
     t_convcode code2 = convcode_initialize(forward_2, backward_2, N_components);
 
-
     // build interleaver
     int octets = 1;
     int base = 223;
@@ -320,14 +319,14 @@ int main(int argc, char *argv[])
     exit(EXIT_SUCCESS);
 //
     // simulation loop
-    // initialize seed of RNG
+    // initialize seed of RNG/*{{{*/
     srand(time(NULL));
 
     // number of erroneous bits for each tested packet
     int packet_count = 0;
     int interval = (int) num_packets * 0.05 + 1;
 
-    omp_set_num_threads(4);
+    omp_set_num_threads(1);
     #pragma omp parallel
     {
         #pragma omp for nowait
@@ -352,7 +351,7 @@ int main(int argc, char *argv[])
             //free(noise_sequence);
             free(noise_seq_coded);
         }
-    }
+    }/*}}}*/
 
     // compute BER
     for (int i = 0; i < SNR_points; i++)
@@ -400,8 +399,8 @@ int simulate_conv(int *packet, double *noise_sequence, int packet_length, double
     for (int i = 0; i < encoded_length; i++)
         received[i] = (2*encoded[i] - 1) + sigma*noise_sequence[i];
 
-//    int *decoded = convcode_decode(received, encoded_length, code);
-    int *decoded = convcode_extrinsic(received, encoded_length, NULL, code, sigma*sigma);
+    int *decoded = convcode_decode(received, encoded_length, code);
+    /* int *decoded = convcode_extrinsic(received, encoded_length, NULL, code, sigma*sigma); */
     for (int j = 0; j < packet_length; ++j)
         errors += (decoded[j] != packet[j]);
 
