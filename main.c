@@ -376,6 +376,7 @@ int main(int argc, char *argv[])
     free(sigma);
 
     return 0;
+    // cheeky
 }
 
 // thread routines
