@@ -70,6 +70,10 @@ int *turbo_encode(int *packet, t_turbocode code)
         cw = !c  ? cw+1 : cw;
     }/*}}}*/
 
+    free(conv_encoded[0]);
+    free(conv_encoded[1]);
+    free(conv_encoded);
+
     free(interleaved_packet);
 
     return turbo_encoded;/*}}}*/
