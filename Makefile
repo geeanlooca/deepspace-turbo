@@ -4,7 +4,7 @@ OBJDIR = ./build
 BINDIR = ./bin
 LIBS = -lm -fopenmp
 
-default: convolutionalBER
+default: deepspace_turbo
 
 # Build binaries
 convolutionalBER: $(OBJDIR)/main.o $(OBJDIR)/utilities.o $(OBJDIR)/libconvcodes.o $(OBJDIR)/libturbocodes.o
