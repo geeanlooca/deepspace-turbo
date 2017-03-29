@@ -6,35 +6,37 @@
 
 #IncludeRegexTransform: 
 
-/home/gianluca/CLionProjects/deepspace-turbo/libconvcodes.c
+/home/gianluca/deepspace-turbo/libconvcodes.c
 stdio.h
 -
 stdlib.h
 -
-time.h
--
 string.h
--
-float.h
 -
 math.h
 -
 libconvcodes.h
-/home/gianluca/CLionProjects/deepspace-turbo/libconvcodes.h
+/home/gianluca/deepspace-turbo/libconvcodes.h
 
-/home/gianluca/CLionProjects/deepspace-turbo/libconvcodes.h
+/home/gianluca/deepspace-turbo/libconvcodes.h
 
-/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.c
+/home/gianluca/deepspace-turbo/libturbocodes.c
 libturbocodes.h
-/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.h
+/home/gianluca/deepspace-turbo/libturbocodes.h
 stdlib.h
 -
+utilities.h
+/home/gianluca/deepspace-turbo/utilities.h
+stdio.h
+-
+math.h
+-
 
-/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.h
+/home/gianluca/deepspace-turbo/libturbocodes.h
 libconvcodes.h
-/home/gianluca/CLionProjects/deepspace-turbo/libconvcodes.h
+/home/gianluca/deepspace-turbo/libconvcodes.h
 
-/home/gianluca/CLionProjects/deepspace-turbo/main.c
+/home/gianluca/deepspace-turbo/main.c
 stdio.h
 -
 stdlib.h
@@ -56,19 +58,19 @@ sys/stat.h
 errno.h
 -
 libconvcodes.h
-/home/gianluca/CLionProjects/deepspace-turbo/libconvcodes.h
+/home/gianluca/deepspace-turbo/libconvcodes.h
 libturbocodes.h
-/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.h
+/home/gianluca/deepspace-turbo/libturbocodes.h
 utilities.h
-/home/gianluca/CLionProjects/deepspace-turbo/utilities.h
+/home/gianluca/deepspace-turbo/utilities.h
 getopt.h
 -
 
-/home/gianluca/CLionProjects/deepspace-turbo/utilities.c
+/home/gianluca/deepspace-turbo/utilities.c
 utilities.h
-/home/gianluca/CLionProjects/deepspace-turbo/utilities.h
+/home/gianluca/deepspace-turbo/utilities.h
 utilities.h
-/home/gianluca/CLionProjects/deepspace-turbo/utilities.h
+/home/gianluca/deepspace-turbo/utilities.h
 stdlib.h
 -
 stdio.h
@@ -76,7 +78,7 @@ stdio.h
 math.h
 -
 
-/home/gianluca/CLionProjects/deepspace-turbo/utilities.h
+/home/gianluca/deepspace-turbo/utilities.h
 stdio.h
 -
 

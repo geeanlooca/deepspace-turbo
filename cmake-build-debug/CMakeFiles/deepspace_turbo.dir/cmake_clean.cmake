@@ -3,8 +3,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/deepspace_turbo.dir/utilities.c.o"
   "CMakeFiles/deepspace_turbo.dir/libconvcodes.c.o"
   "CMakeFiles/deepspace_turbo.dir/libturbocodes.c.o"
-  "deepspace_turbo.pdb"
-  "deepspace_turbo"
+  "../bin/deepspace_turbo.pdb"
+  "../bin/deepspace_turbo"
 )
 
 # Per-language clean rules from dependency scanning.

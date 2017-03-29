@@ -8,38 +8,38 @@
 		<Option virtualFolders="CMake Files\;"/>
 		<Build>
 			<Target title="all">
-				<Option working_dir="/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug"/>
+				<Option working_dir="/home/gianluca/deepspace-turbo/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="edit_cache">
-				<Option working_dir="/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug"/>
+				<Option working_dir="/home/gianluca/deepspace-turbo/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="rebuild_cache">
-				<Option working_dir="/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug"/>
+				<Option working_dir="/home/gianluca/deepspace-turbo/cmake-build-debug"/>
 				<Option type="4"/>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="deepspace_turbo">
-				<Option output="/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/deepspace_turbo" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug"/>
+				<Option output="/home/gianluca/deepspace-turbo/bin/deepspace_turbo" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/gianluca/deepspace-turbo/bin"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
 				<Option compiler="gcc"/>
@@ -54,15 +54,15 @@
 					<Add directory="/usr/include/c++/6/backward"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 deepspace_turbo"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 deepspace_turbo"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 			<Target title="deepspace_turbo/fast">
-				<Option output="/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/deepspace_turbo" prefix_auto="0" extension_auto="0"/>
-				<Option working_dir="/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug"/>
+				<Option output="/home/gianluca/deepspace-turbo/bin/deepspace_turbo" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/gianluca/deepspace-turbo/bin"/>
 				<Option object_output="./"/>
 				<Option type="1"/>
 				<Option compiler="gcc"/>
@@ -77,35 +77,35 @@
 					<Add directory="/usr/include/c++/6/backward"/>
 				</Compiler>
 				<MakeCommands>
-					<Build command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 deepspace_turbo/fast"/>
-					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
-					<Clean command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
-					<DistClean command="/usr/bin/make -j8 -f &quot;/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<Build command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 deepspace_turbo/fast"/>
+					<CompileFile command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j8 -f &quot;/home/gianluca/deepspace-turbo/cmake-build-debug/Makefile&quot;  VERBOSE=1 clean"/>
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/home/gianluca/CLionProjects/deepspace-turbo/libconvcodes.c">
+		<Unit filename="/home/gianluca/deepspace-turbo/libconvcodes.c">
 			<Option target="deepspace_turbo"/>
 		</Unit>
-		<Unit filename="/home/gianluca/CLionProjects/deepspace-turbo/libconvcodes.h">
+		<Unit filename="/home/gianluca/deepspace-turbo/libconvcodes.h">
 			<Option target="deepspace_turbo"/>
 		</Unit>
-		<Unit filename="/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.c">
+		<Unit filename="/home/gianluca/deepspace-turbo/libturbocodes.c">
 			<Option target="deepspace_turbo"/>
 		</Unit>
-		<Unit filename="/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.h">
+		<Unit filename="/home/gianluca/deepspace-turbo/libturbocodes.h">
 			<Option target="deepspace_turbo"/>
 		</Unit>
-		<Unit filename="/home/gianluca/CLionProjects/deepspace-turbo/main.c">
+		<Unit filename="/home/gianluca/deepspace-turbo/main.c">
 			<Option target="deepspace_turbo"/>
 		</Unit>
-		<Unit filename="/home/gianluca/CLionProjects/deepspace-turbo/utilities.c">
+		<Unit filename="/home/gianluca/deepspace-turbo/utilities.c">
 			<Option target="deepspace_turbo"/>
 		</Unit>
-		<Unit filename="/home/gianluca/CLionProjects/deepspace-turbo/utilities.h">
+		<Unit filename="/home/gianluca/deepspace-turbo/utilities.h">
 			<Option target="deepspace_turbo"/>
 		</Unit>
-		<Unit filename="/home/gianluca/CLionProjects/deepspace-turbo/CMakeLists.txt">
+		<Unit filename="/home/gianluca/deepspace-turbo/CMakeLists.txt">
 			<Option virtualFolder="CMake Files\"/>
 		</Unit>
 	</Project>

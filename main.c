@@ -309,12 +309,12 @@ int main(int argc, char *argv[])
     interleaver[0] = identity;
     interleaver[1] = pi;
 
-    t_convcode codes[2] = {code, code2};
-    t_turbocode turbo = turbo_initialize(codes, 2, interleaver, info_length);
-
-    // create packet
-    int *pkt = randbits(info_length);
-    int *encoded = turbo_encode(pkt, turbo);
+//    t_convcode codes[2] = {code, code2};
+//    t_turbocode turbo = turbo_initialize(codes, 2, interleaver, info_length);
+//
+//    // create packet
+//    int *pkt = randbits(info_length);
+//    int *encoded = turbo_encode(pkt, turbo);
 
     exit(EXIT_SUCCESS);
 //

@@ -4,10 +4,10 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
-  "/home/gianluca/CLionProjects/deepspace-turbo/libconvcodes.c" "/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/CMakeFiles/deepspace_turbo.dir/libconvcodes.c.o"
-  "/home/gianluca/CLionProjects/deepspace-turbo/libturbocodes.c" "/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/CMakeFiles/deepspace_turbo.dir/libturbocodes.c.o"
-  "/home/gianluca/CLionProjects/deepspace-turbo/main.c" "/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/CMakeFiles/deepspace_turbo.dir/main.c.o"
-  "/home/gianluca/CLionProjects/deepspace-turbo/utilities.c" "/home/gianluca/CLionProjects/deepspace-turbo/cmake-build-debug/CMakeFiles/deepspace_turbo.dir/utilities.c.o"
+  "/home/gianluca/deepspace-turbo/libconvcodes.c" "/home/gianluca/deepspace-turbo/cmake-build-debug/CMakeFiles/deepspace_turbo.dir/libconvcodes.c.o"
+  "/home/gianluca/deepspace-turbo/libturbocodes.c" "/home/gianluca/deepspace-turbo/cmake-build-debug/CMakeFiles/deepspace_turbo.dir/libturbocodes.c.o"
+  "/home/gianluca/deepspace-turbo/main.c" "/home/gianluca/deepspace-turbo/cmake-build-debug/CMakeFiles/deepspace_turbo.dir/main.c.o"
+  "/home/gianluca/deepspace-turbo/utilities.c" "/home/gianluca/deepspace-turbo/cmake-build-debug/CMakeFiles/deepspace_turbo.dir/utilities.c.o"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
 

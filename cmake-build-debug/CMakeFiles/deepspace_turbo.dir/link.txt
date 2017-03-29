@@ -1,1 +1,1 @@
-/usr/bin/cc  -fopenmp -g   CMakeFiles/deepspace_turbo.dir/main.c.o CMakeFiles/deepspace_turbo.dir/utilities.c.o CMakeFiles/deepspace_turbo.dir/libconvcodes.c.o CMakeFiles/deepspace_turbo.dir/libturbocodes.c.o  -o deepspace_turbo -lm 
+/usr/bin/cc  -fopenmp -g   CMakeFiles/deepspace_turbo.dir/main.c.o CMakeFiles/deepspace_turbo.dir/utilities.c.o CMakeFiles/deepspace_turbo.dir/libconvcodes.c.o CMakeFiles/deepspace_turbo.dir/libturbocodes.c.o  -o ../bin/deepspace_turbo -lm 
