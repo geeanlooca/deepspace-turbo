@@ -2,3 +2,4 @@
 *.out
 *.o
 *.csv
+.idea/workspace.xml
