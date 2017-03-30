@@ -30,12 +30,12 @@ t_turbocode turbo_initialize(t_convcode upper, t_convcode lower, int components,
 
 static int *turbo_interleave(int *packet, t_turbocode code)
 {
-    int *interleaved_message = malloc(code.packet_length * sizeof(int));
+    int *interleaved_packet = malloc(code.packet_length * sizeof(int));
     for (int j = 0; j < code.packet_length; ++j) {
-        interleaved_message[j] = packet[code.interleaver[j]];
+        interleaved_packet[j] = packet[code.interleaver[j]];
     }
 
-    return interleaved_message;/*}}}*/
+    return interleaved_packet;/*}}}*/
 }
 
 static void message_interleave(double **messages, t_turbocode code)
@@ -50,11 +50,14 @@ static void message_interleave(double **messages, t_turbocode code)
         local[1][i] = messages[1][code.interleaver[i]];
     }
 
-    free(messages[0]);
-    free(messages[1]);
-    free(messages);
+    for (int i = 0; i < code.packet_length; ++i) {
+        messages[0][i] = local[0][i];
+        messages[0][i] = local[1][i];
+    }
 
-    messages = local;
+    free(local[0]);
+    free(local[1]);
+    free(local);
 }
 
 static void message_deinterleave(double **messages, t_turbocode code)
@@ -69,11 +72,15 @@ static void message_deinterleave(double **messages, t_turbocode code)
         local[1][code.interleaver[i]] = messages[1][i];
     }
 
-    free(messages[0]);
-    free(messages[1]);
-    free(messages);
+    for (int i = 0; i < code.packet_length; ++i) {
+        messages[0][i] = local[0][i];
+        messages[0][i] = local[1][i];
+    }
 
-    messages = local;
+    free(local[0]);
+    free(local[1]);
+    free(local);
+
 }
 
 
@@ -147,27 +154,25 @@ int *turbo_decode(double *received, int iterations, double noise_variance, t_tur
     // initial messages
     double **messages = malloc(2 * sizeof(double *));
     for (int i = 0; i < 2; i++) {
-       messages[i] = malloc(code.packet_length * sizeof(double));
-       for (int j = 0; j < code.packet_length; j++) {
-           messages[i][j] = log(0.5);
-       }
+        messages[i] = malloc(code.packet_length * sizeof(double));
+        for (int j = 0; j < code.packet_length; j++) {
+            messages[i][j] = log(0.5);
+        }
     }
 
     for (int i = 0; i < iterations; i++) {
-        double **extrinsic_upper = convcode_extrinsic(streams[0], lengths[0], messages, code.upper_code, noise_variance);
+
+        // run BCJR on upper code
+        convcode_extrinsic(streams[0], lengths[0], messages, code.upper_code, noise_variance);
 
         // apply interleaver
+        message_interleave(messages, code);
 
-        double **extrinsic_lower = convcode_extrinsic(streams[1], lengths[1], extrinsic_upper, code.lower_code, noise_variance);
+        // run BCJR on lower code
+        convcode_extrinsic(streams[1], lengths[1], messages, code.lower_code, noise_variance);
 
         // deinterleave
-
-        free(messages[0]);
-        free(messages[1]);
-        free(extrinsic_upper[0]);
-        free(extrinsic_upper[1]);
-
-        messages = extrinsic_lower;
+        message_deinterleave(messages, code);
     }
 
     //decision
