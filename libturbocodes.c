@@ -38,6 +38,45 @@ static int *turbo_interleave(int *packet, t_turbocode code)
     return interleaved_message;/*}}}*/
 }
 
+static void message_interleave(double **messages, t_turbocode code)
+{
+    // local array
+    double **local = malloc(2*sizeof(double*));
+    local[0] = malloc(code.packet_length * sizeof(double));
+    local[1] = malloc(code.packet_length * sizeof(double));
+
+    for (int i = 0; i < code.packet_length; ++i) {
+        local[0][i] = messages[0][code.interleaver[i]];
+        local[1][i] = messages[1][code.interleaver[i]];
+    }
+
+    free(messages[0]);
+    free(messages[1]);
+    free(messages);
+
+    messages = local;
+}
+
+static void message_deinterleave(double **messages, t_turbocode code)
+{
+     // local array
+    double **local = malloc(2*sizeof(double*));
+    local[0] = malloc(code.packet_length * sizeof(double));
+    local[1] = malloc(code.packet_length * sizeof(double));
+
+    for (int i = 0; i < code.packet_length; ++i) {
+        local[0][code.interleaver[i]] = messages[0][i];
+        local[1][code.interleaver[i]] = messages[1][i];
+    }
+
+    free(messages[0]);
+    free(messages[1]);
+    free(messages);
+
+    messages = local;
+}
+
+
 int *turbo_encode(int *packet, t_turbocode code)
 {
     int *interleaved_packet = turbo_interleave(packet, code);/*{{{*/
@@ -52,6 +91,7 @@ int *turbo_encode(int *packet, t_turbocode code)
 
     t_convcode codes[2] = {code.upper_code, code.lower_code};
     // parallel to serial
+
     int k = 0, c = 0, cw = 0;/*{{{*/
     while (k < turbo_length) {
         t_convcode cc = codes[c];
@@ -114,20 +154,20 @@ int *turbo_decode(double *received, int iterations, double noise_variance, t_tur
     }
 
     for (int i = 0; i < iterations; i++) {
-       double **extrinsic_upper = convcode_extrinsic(streams[0], lengths[0], messages, code.upper_code, noise_variance);
+        double **extrinsic_upper = convcode_extrinsic(streams[0], lengths[0], messages, code.upper_code, noise_variance);
 
-       // apply interleaver
-       
-       double **extrinsic_lower = convcode_extrinsic(streams[1], lengths[1], extrinsic_upper, code.lower_code, noise_variance);
+        // apply interleaver
 
-       // deinterleave
+        double **extrinsic_lower = convcode_extrinsic(streams[1], lengths[1], extrinsic_upper, code.lower_code, noise_variance);
 
-       free(messages[0]);
-       free(messages[1]);
-       free(extrinsic_upper[0]);
-       free(extrinsic_upper[1]);
+        // deinterleave
 
-       messages = extrinsic_lower;
+        free(messages[0]);
+        free(messages[1]);
+        free(extrinsic_upper[0]);
+        free(extrinsic_upper[1]);
+
+        messages = extrinsic_lower;
     }
 
     //decision

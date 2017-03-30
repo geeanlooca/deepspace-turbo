@@ -17,6 +17,8 @@ typedef struct str_turbocode{
 } t_turbocode;
 
 static int *turbo_interleave(int *packet, t_turbocode code);
+static void message_interleave(double **messages, t_turbocode code);
+static void message_deinterleave(double **messages, t_turbocode code);
 
 int *turbo_encode(int *packet, t_turbocode code);
 
