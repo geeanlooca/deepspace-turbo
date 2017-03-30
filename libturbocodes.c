@@ -105,22 +105,33 @@ int *turbo_decode(double *received, int iterations, double noise_variance, t_tur
     int *turbo_decoded = malloc(code.packet_length * sizeof *turbo_decoded);
 
     // initial messages
-    /* double **messages = malloc(2 * sizeof(double *)); */
-    /* for (int i = 0; i < 2; i++) { */
-    /*    messages[i] = malloc(code.packet_length * sizeof(double)); */
-    /*    for (int j = 0; j < code.packet_length; j++) { */
-    /*        messages[i][j] = log(0.5); */
-    /*    } */
-    /* } */
-
-    double **messages = NULL;
+    double **messages = malloc(2 * sizeof(double *));
+    for (int i = 0; i < 2; i++) {
+       messages[i] = malloc(code.packet_length * sizeof(double));
+       for (int j = 0; j < code.packet_length; j++) {
+           messages[i][j] = log(0.5);
+       }
+    }
 
     for (int i = 0; i < iterations; i++) {
-        for (int c = 0; c < 2; c++) {
-            t_convcode cc = codes[c];
-            convcode_extrinsic(streams[c], lengths[c], messages, cc, noise_variance);
-        }
+       double **extrinsic_upper = convcode_extrinsic(streams[0], lengths[0], messages, code.upper_code, noise_variance);
+
+       // apply interleaver
+       
+       double **extrinsic_lower = convcode_extrinsic(streams[1], lengths[1], extrinsic_upper, code.lower_code, noise_variance);
+
+       // deinterleave
+
+       free(messages[0]);
+       free(messages[1]);
+       free(extrinsic_upper[0]);
+       free(extrinsic_upper[1]);
+
+       messages = extrinsic_lower;
     }
+
+    //decision
+
 
     for (int i = 0; i < 2; i++)
         free(streams[i]);
