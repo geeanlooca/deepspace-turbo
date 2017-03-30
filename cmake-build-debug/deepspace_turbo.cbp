@@ -84,6 +84,9 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="/home/gianluca/deepspace-turbo/colors.h">
+			<Option target="deepspace_turbo"/>
+		</Unit>
 		<Unit filename="/home/gianluca/deepspace-turbo/libconvcodes.c">
 			<Option target="deepspace_turbo"/>
 		</Unit>

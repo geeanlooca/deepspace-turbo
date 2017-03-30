@@ -4,8 +4,6 @@
 
 #include "libturbocodes.h"
 #include <stdlib.h>
-#include "utilities.h"
-#include <stdio.h>
 #include <math.h>
 
 

@@ -6,6 +6,8 @@
 
 #IncludeRegexTransform: 
 
+/home/gianluca/deepspace-turbo/colors.h
+
 /home/gianluca/deepspace-turbo/libconvcodes.c
 stdio.h
 -
@@ -25,10 +27,6 @@ libturbocodes.h
 /home/gianluca/deepspace-turbo/libturbocodes.h
 stdlib.h
 -
-utilities.h
-/home/gianluca/deepspace-turbo/utilities.h
-stdio.h
--
 math.h
 -
 
@@ -45,17 +43,11 @@ math.h
 -
 time.h
 -
-unistd.h
--
 omp.h
 -
 limits.h
 -
 string.h
--
-sys/stat.h
--
-errno.h
 -
 libconvcodes.h
 /home/gianluca/deepspace-turbo/libconvcodes.h
@@ -65,15 +57,13 @@ utilities.h
 /home/gianluca/deepspace-turbo/utilities.h
 getopt.h
 -
+colors.h
+/home/gianluca/deepspace-turbo/colors.h
 
 /home/gianluca/deepspace-turbo/utilities.c
 utilities.h
 /home/gianluca/deepspace-turbo/utilities.h
-utilities.h
-/home/gianluca/deepspace-turbo/utilities.h
 stdlib.h
--
-stdio.h
 -
 math.h
 -
