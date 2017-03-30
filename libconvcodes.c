@@ -346,8 +346,8 @@ double **convcode_extrinsic(double *received, double length, double **a_priori, 
         app[i] = malloc((packet_length + code.memory) * sizeof *app);
 
     for (int i = 0; i < packet_length; ++i){
-        app[0][i] = (a_priori == NULL) ?  log(0.5) : a_priori[0][i];
-        app[1][i] = (a_priori == NULL) ?  log(0.5) : a_priori[1][i];
+        app[0][i] = a_priori[0][i];
+        app[1][i] = a_priori[1][i];
     }
     
     for (int i = 0; i < code.memory; i++) {
@@ -476,7 +476,9 @@ double **convcode_extrinsic(double *received, double length, double **a_priori, 
             }
 
             extrinsic[u][i] = E;
-            a_priori[u][i] = E;
+
+            if (i < packet_length)
+                a_priori[u][i] = E;
         }
     }/*}}}*/
 
@@ -498,13 +500,13 @@ double **convcode_extrinsic(double *received, double length, double **a_priori, 
 
     for (int i = 0; i < 2; i++) {
         free(extrinsic[i]);
+        free(app[i]);
     }
     free(extrinsic);
-
     free(app);
     free(rho);/*}}}*/
 
-    return NULL;
+    return extrinsic;
 
     /*}}}*/
 }
