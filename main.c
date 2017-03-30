@@ -291,9 +291,7 @@ int main(int argc, char *argv[])
     int k1 = 8;
     int k2 = base * octets;
 
-    int **interleaver = malloc(2 * sizeof(int*));
     int *pi = malloc(info_length * sizeof *pi);
-    int *identity = malloc(info_length * sizeof *identity);
 
     for (int s = 1; s <= info_length; ++s) {
         int m = (s-1) % 2;
@@ -303,18 +301,21 @@ int main(int argc, char *argv[])
         int q = t % 8 + 1;
         int c = (p[q-1]*j + 21*m) % k2;
         pi[s-1] = 2*(t + c*(k1/2) + 1) - m - 1;
-        identity[s-1] = s-1;
+    }
+    t_turbocode turbo = turbo_initialize(code, code, 2, pi, info_length);
+
+    // create packet
+    int *pkt = randbits(info_length);
+
+    int *encoded = turbo_encode(pkt, turbo);
+    double *received = malloc(turbo.encoded_length * sizeof(*received));
+    double *noise_seq = randn(0, 1, turbo.encoded_length);
+    double sigma2 = 0.2;
+    for (int n = 0; n < turbo.encoded_length; ++n) {
+       received[n] = 2*encoded[n] - 1 + sqrt(sigma2)* noise_seq[n];
     }
 
-    interleaver[0] = identity;
-    interleaver[1] = pi;
-
-//    t_convcode codes[2] = {code, code2};
-//    t_turbocode turbo = turbo_initialize(codes, 2, interleaver, info_length);
-//
-//    // create packet
-//    int *pkt = randbits(info_length);
-//    int *encoded = turbo_encode(pkt, turbo);
+    turbo_decode(received, 2, sigma2, turbo);
 
     exit(EXIT_SUCCESS);
 //
