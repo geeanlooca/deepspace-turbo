@@ -15,6 +15,8 @@
 // thread routines
 int simulate_awgn(int *packet, double *noise_sequence, int packet_length, double sigma);
 int simulate_conv(int *packet, double *noise_sequence, int packet_length, double sigma, t_convcode code);
+int
+simulate_turbo(int *packet, double *noise_sequence, int packet_length, double sigma, t_turbocode code, int iterations);
 
 
 int main(int argc, char *argv[])
@@ -25,12 +27,13 @@ int main(int argc, char *argv[])
 
     // default simulation parameters
     int packet_length = (int) 1e4;
-    int num_packets = (int) 1e2;
+    int num_packets = (int) 10;
 
-    int SNR_points = 10;
-    float min_SNR = -4;
-    float max_SNR = 6;
+    int SNR_points = 8;
+    float min_SNR = -2;
+    float max_SNR = 2;
     int cores = 4;
+    int iterations = 2;
 
     char filename[PATH_MAX];
 
@@ -51,13 +54,14 @@ int main(int argc, char *argv[])
                         {"min-SNR",         required_argument,  0,  'm'},
                         {"max-SNR",         required_argument,  0,  'M'},
                         {"SNR-points",      required_argument,  0,  'n'},
+                        {"iterations",      required_argument,  0,  'i'},
                         {"help",            no_argument,        0,  'h'},
                         {0, 0, 0, 0}
                 };
 
         int option_index = 0;
 
-        c = getopt_long(argc, argv, "yhl:c:C:m:M:f:b:o:n:", long_options, &option_index);
+        c = getopt_long(argc, argv, "yhl:c:C:m:M:f:b:o:n:i:", long_options, &option_index);
 
         if (c == -1)
             break;
@@ -109,6 +113,7 @@ int main(int argc, char *argv[])
                 printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-n / --SNR-points INTEGER", "set the number of linearly spaced points "
                         "inside the interval [min-SNR, max-SNR]");
 
+                printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-i / --iterations", "set the number of iterations for the turbo decoding algorithm.");
                 exit(EXIT_SUCCESS);
 
             case 'm':
@@ -121,6 +126,10 @@ int main(int argc, char *argv[])
 
             case 'n':
                 SNR_points = (int)strtol(optarg, NULL, 10);
+                break;
+
+            case 'i':
+                iterations = (int)strtol(optarg, NULL, 10);
                 break;
 
             case 'o':
@@ -166,37 +175,39 @@ int main(int argc, char *argv[])
         time_ = localtime(&now);
         strftime(filename, sizeof(filename), "%Y-%m-%d_%H-%M-%S.csv", time_);
 
-        printf("Output filename not provided. File" BOLDMAGENTA "\'%s\'" RESET " will be used. \n", filename);
+        printf("Output filename not provided. File " BOLDMAGENTA "\'%s\'" RESET " will be used. \n", filename);
     }
 
     // print simulation parameters
-    char header[PATH_MAX];
-    int w = 15;
-    sprintf(header, "|%-*s|%-*s|%-*s|%-*s|%-*s|", w, "Packet length", w, "Packet count",
-            w, "Min SNR [dB]", w, "Max SNR [dB]", w, "SNR points");
+    if (!skipconfirm_flag){
+        char header[PATH_MAX];
+        int w = 15;
+        sprintf(header, "|%-*s|%-*s|%-*s|%-*s|%-*s|", w, "Packet length", w, "Packet count",
+                w, "Min SNR [dB]", w, "Max SNR [dB]", w, "SNR points");
 
-    int header_length = (int)strlen(header);
-    for (int l = 0; l < header_length; ++l) {
-        char ch =  (l % (w+1)) ? '-' : '+';
-        printf("%c", ch);
+        int header_length = (int)strlen(header);
+        for (int l = 0; l < header_length; ++l) {
+            char ch =  (l % (w+1)) ? '-' : '+';
+            printf("%c", ch);
+        }
+
+        printf("\n%s\n", header);
+        for (int l = 0; l < header_length; ++l) {
+            char ch =  (l % (w+1)) ? '-' : '+';
+            printf("%c", ch);
+        }
+
+        char data_str[256];
+        sprintf(data_str, "|%-*d|%-*d|%-*f|%-*f|%-*d|", w, packet_length, w, num_packets,
+                w, min_SNR, w, max_SNR, w, SNR_points);
+        printf("\n%s\n", data_str);
+
+        for (int l = 0; l < header_length; ++l) {
+            char ch =  (l % (w+1)) ? '-' : '+';
+            printf("%c", ch);
+        }
+        printf("\n");
     }
-
-    printf("\n%s\n", header);
-    for (int l = 0; l < header_length; ++l) {
-        char ch =  (l % (w+1)) ? '-' : '+';
-        printf("%c", ch);
-    }
-
-    char data_str[256];
-    sprintf(data_str, "|%-*d|%-*d|%-*f|%-*f|%-*d|", w, packet_length, w, num_packets,
-            w, min_SNR, w, max_SNR, w, SNR_points);
-    printf("\n%s\n", data_str);
-
-    for (int l = 0; l < header_length; ++l) {
-        char ch =  (l % (w+1)) ? '-' : '+';
-        printf("%c", ch);
-    }
-    printf("\n");
 
     // confirmation
     char x = (skipconfirm_flag) ? 'y' : 0;
@@ -226,17 +237,14 @@ int main(int argc, char *argv[])
     double *BER = malloc(SNR_points*sizeof *BER);
 
     // define first code
-    int N_components = 3;
+    int N_components = 2;
     char *forward[N_components];
     forward[0] = "10011";
     forward[1] = "10101";
-    forward[2] = "11111";
 
     char *backward;
     backward = "0011";
-
     double rate = 1.0f/N_components;
-
 
     // get noise std variation from SNR
     for (int i = 0; i < SNR_points; i++)
@@ -245,20 +253,8 @@ int main(int argc, char *argv[])
         EbN0[i] = 1 / (2*rate*pow(sigma[i], 2));
     }
 
-
-    // initialize code: mandatory call
+    // initialize turbocode: mandatory call
     t_convcode code = convcode_initialize(forward, backward, N_components);
-
-
-    // define second code
-    N_components = 1;
-    char *forward_2[N_components];
-    forward_2[0] = "11011";
-
-    char *backward_2;
-    backward_2 = "0011";
-
-    t_convcode code2 = convcode_initialize(forward_2, backward_2, N_components);
 
     // build interleaver
     int octets = 1;
@@ -279,23 +275,8 @@ int main(int argc, char *argv[])
         int c = (p[q-1]*j + 21*m) % k2;
         pi[s-1] = 2*(t + c*(k1/2) + 1) - m - 1;
     }
-    t_turbocode turbo = turbo_initialize(code, code, 2, pi, info_length);
+    t_turbocode turbo = turbo_initialize(code, code, pi, info_length);
 
-    // create packet
-    int *pkt = randbits(info_length);
-
-    int *encoded = turbo_encode(pkt, turbo);
-    double *received = malloc(turbo.encoded_length * sizeof(*received));
-    double *noise_seq = randn(0, 1, turbo.encoded_length);
-    double sigma2 = 0.2;
-    for (int n = 0; n < turbo.encoded_length; ++n) {
-       received[n] = 2*encoded[n] - 1 + sqrt(sigma2)* noise_seq[n];
-    }
-
-    turbo_decode(received, 2, sigma2, turbo);
-
-    exit(EXIT_SUCCESS);
-//
     // simulation loop
     // initialize seed of RNG/*{{{*/
     srand(time(NULL));
@@ -304,7 +285,7 @@ int main(int argc, char *argv[])
     int packet_count = 0;
     int interval = num_packets * 0.05 + 1;
 
-    omp_set_num_threads(1);
+    omp_set_num_threads(4);
     #pragma omp parallel
     {
         #pragma omp for nowait
@@ -312,17 +293,17 @@ int main(int argc, char *argv[])
         {
             packet_count++;
             // generate packet
-            int *packet = randbits(packet_length);
+            int *packet = randbits(info_length);
 
             if (! (packet_count % interval))
                 printf("Processing packet #%d/%d\n", packet_count, num_packets);
 
             //double *noise_sequence = randn(0, 1, packet_length);
-            double *noise_seq_coded = randn(0, 1, (packet_length + code.memory)*code.components);
+            double *noise_seq_coded = randn(0, 1, turbo.encoded_length);
 
             for (int s = 0; s < SNR_points; s++){
-                errors[s] += simulate_conv(packet, noise_seq_coded, packet_length, sigma[s], code);
-                //errors[s] += simulate_awgn(packet, noise_sequence, packet_length, sigma[s]);
+//                errors[s] += simulate_conv(packet, noise_seq_coded, info_length, sigma[s], code);
+                errors[s] += simulate_turbo(packet, noise_seq_coded, info_length, sigma[s], turbo, iterations);
             }
 
             free(packet);
@@ -333,7 +314,7 @@ int main(int argc, char *argv[])
 
     // compute BER
     for (int i = 0; i < SNR_points; i++)
-        BER[i] = (double) errors[i]/(num_packets*packet_length);
+        BER[i] = (double) errors[i]/(num_packets*info_length);
 
     printf(BOLDGREEN "\nSimulation completed.\n\n" RESET);
 
@@ -377,8 +358,35 @@ int simulate_conv(int *packet, double *noise_sequence, int packet_length, double
     for (int i = 0; i < encoded_length; i++)
         received[i] = (2*encoded[i] - 1) + sigma*noise_sequence[i];
 
-    int *decoded = convcode_decode(received, encoded_length, code);
-    /* int *decoded = convcode_extrinsic(received, encoded_length, NULL, code, sigma*sigma); */
+//    int *decoded = convcode_decode(received, encoded_length, code);
+    double **a_priori = malloc(2*sizeof(double*));
+    for (int k = 0; k < 2; ++k) {
+        a_priori[k] = malloc(packet_length * sizeof(double));
+        for (int i = 0; i < packet_length; ++i) {
+            a_priori[k][i] = log(0.5);
+        }
+    }
+    int *decoded = convcode_extrinsic(received, encoded_length, &a_priori, code, sigma*sigma, 1);
+    for (int j = 0; j < packet_length; ++j)
+        errors += (decoded[j] != packet[j]);
+
+    free(decoded);
+    free(encoded);
+    free(received);
+    return errors;/*}}}*/
+}
+
+int simulate_turbo(int *packet, double *noise_sequence, int packet_length, double sigma, t_turbocode code, int iterations)
+{
+    int errors = 0;/*{{{*/
+    int *encoded = turbo_encode(packet, code);
+    int encoded_length = code.encoded_length;
+
+    double *received = malloc(encoded_length * sizeof *received);
+    for (int i = 0; i < encoded_length; i++)
+        received[i] = (2*encoded[i] - 1) + sigma*noise_sequence[i];
+
+    int *decoded = turbo_decode(received, iterations, sigma*sigma, code);
     for (int j = 0; j < packet_length; ++j)
         errors += (decoded[j] != packet[j]);
 
