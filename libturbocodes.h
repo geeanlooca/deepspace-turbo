@@ -17,12 +17,13 @@ typedef struct str_turbocode{
 } t_turbocode;
 
 static int *turbo_interleave(int *packet, t_turbocode code);
-static void message_interleave(double **messages, t_turbocode code);
-static void message_deinterleave(double **messages, t_turbocode code);
+static int *turbo_deinterleave(int *packet, t_turbocode code);
+static void message_interleave(double ***messages, t_turbocode code);
+static void message_deinterleave(double ***messages, t_turbocode code);
 
 int *turbo_encode(int *packet, t_turbocode code);
 
-t_turbocode turbo_initialize(t_convcode upper, t_convcode lower, int components, int *interleaver, int packet_length);
+t_turbocode turbo_initialize(t_convcode upper, t_convcode lower, int *interleaver, int packet_length);
 
 int *turbo_decode(double* received, int iterations, double noise_variance, t_turbocode code);
 

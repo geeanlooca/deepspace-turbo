@@ -3,11 +3,12 @@
 //
 
 #include "libturbocodes.h"
+#include "utilities.h"
 #include <stdlib.h>
 #include <math.h>
 
 
-t_turbocode turbo_initialize(t_convcode upper, t_convcode lower, int components, int *interleaver, int packet_length)
+t_turbocode turbo_initialize(t_convcode upper, t_convcode lower, int *interleaver, int packet_length)
 {
     t_turbocode code;/*{{{*/
     code.upper_code = upper;
@@ -36,7 +37,17 @@ static int *turbo_interleave(int *packet, t_turbocode code)
     return interleaved_packet;/*}}}*/
 }
 
-static void message_interleave(double **messages, t_turbocode code)
+static int *turbo_deinterleave(int *packet, t_turbocode code)
+{
+    int *local = malloc(code.packet_length*sizeof(int));
+    for (int i = 0; i < code.packet_length; ++i) {
+        local[code.interleaver[i]] = packet[i];
+    }
+
+    return local;
+}
+
+static void message_interleave(double ***messages, t_turbocode code)
 {
     // local array
     double **local = malloc(2*sizeof(double*));
@@ -44,13 +55,13 @@ static void message_interleave(double **messages, t_turbocode code)
     local[1] = malloc(code.packet_length * sizeof(double));
 
     for (int i = 0; i < code.packet_length; ++i) {
-        local[0][i] = messages[0][code.interleaver[i]];
-        local[1][i] = messages[1][code.interleaver[i]];
+        local[0][i] = (*messages)[0][code.interleaver[i]];
+        local[1][i] = (*messages)[1][code.interleaver[i]];
     }
 
     for (int i = 0; i < code.packet_length; ++i) {
-        messages[0][i] = local[0][i];
-        messages[0][i] = local[1][i];
+        (*messages)[0][i] = local[0][i];
+        (*messages)[1][i] = local[1][i];
     }
 
     free(local[0]);
@@ -58,7 +69,7 @@ static void message_interleave(double **messages, t_turbocode code)
     free(local);
 }
 
-static void message_deinterleave(double **messages, t_turbocode code)
+static void message_deinterleave(double ***messages, t_turbocode code)
 {
      // local array
     double **local = malloc(2*sizeof(double*));
@@ -66,19 +77,18 @@ static void message_deinterleave(double **messages, t_turbocode code)
     local[1] = malloc(code.packet_length * sizeof(double));
 
     for (int i = 0; i < code.packet_length; ++i) {
-        local[0][code.interleaver[i]] = messages[0][i];
-        local[1][code.interleaver[i]] = messages[1][i];
+        local[0][code.interleaver[i]] = (*messages)[0][i];
+        local[1][code.interleaver[i]] = (*messages)[1][i];
     }
 
     for (int i = 0; i < code.packet_length; ++i) {
-        messages[0][i] = local[0][i];
-        messages[0][i] = local[1][i];
+        (*messages)[0][i] = local[0][i];
+        (*messages)[1][i] = local[1][i];
     }
 
     free(local[0]);
     free(local[1]);
     free(local);
-
 }
 
 
@@ -147,8 +157,6 @@ int *turbo_decode(double *received, int iterations, double noise_variance, t_tur
         cw = !c ? cw + 1 : cw;
     }/*}}}*/
 
-    int *turbo_decoded = malloc(code.packet_length * sizeof *turbo_decoded);
-
     // initial messages
     double **messages = malloc(2 * sizeof(double *));
     for (int i = 0; i < 2; i++) {
@@ -158,28 +166,29 @@ int *turbo_decode(double *received, int iterations, double noise_variance, t_tur
         }
     }
 
+    int *turbo_decoded = NULL;
     for (int i = 0; i < iterations; i++) {
 
         // run BCJR on upper code
-        convcode_extrinsic(streams[0], lengths[0], messages, code.upper_code, noise_variance);
+        convcode_extrinsic(streams[0], lengths[0], &messages, code.upper_code, noise_variance, 0);
 
         // apply interleaver
-        message_interleave(messages, code);
+        message_interleave(&messages, code);
 
         // run BCJR on lower code
-        convcode_extrinsic(streams[1], lengths[1], messages, code.lower_code, noise_variance);
+        turbo_decoded = convcode_extrinsic(streams[1], lengths[1], &messages, code.lower_code, noise_variance, i == (iterations - 1));
 
         // deinterleave
-        message_deinterleave(messages, code);
+        message_deinterleave(&messages, code);
     }
 
-    //decision
-
+    int *decoded_deinterleaved = turbo_deinterleave(turbo_decoded, code);
 
     for (int i = 0; i < 2; i++)
         free(streams[i]);
     free(streams);
+    free(turbo_decoded);
 
     //length of the 
-    return turbo_decoded; /*}}}*/
+    return decoded_deinterleaved; /*}}}*/
 }
