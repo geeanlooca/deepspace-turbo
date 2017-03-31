@@ -27,7 +27,8 @@ int* convcode_decode(double *received, int length, t_convcode code);
 void print_neighbors(t_convcode code);
 
 // BCJR decoding
-double **convcode_extrinsic(double *received, double length, double **a_priori, t_convcode code, double noise_variance);
+int * convcode_extrinsic(double *received, double length, double ***a_priori, t_convcode code, double noise_variance,
+                         int decision);
 
 static double exp_sum(double a, double b);
 

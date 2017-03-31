@@ -333,7 +333,8 @@ void print_neighbors(t_convcode code)
     printf("\n");/*}}}*/
 }
 
-double **convcode_extrinsic(double *received, double length, double **a_priori, t_convcode code, double noise_variance)
+int *convcode_extrinsic(double *received, double length, double ***a_priori, t_convcode code, double noise_variance,
+                        int decision)
 {
     int N_states = 2 << (code.memory - 1);/*{{{*/
     int packet_length = (int) length / code.components - code.memory;
@@ -346,8 +347,8 @@ double **convcode_extrinsic(double *received, double length, double **a_priori, 
         app[i] = malloc((packet_length + code.memory) * sizeof *app);
 
     for (int i = 0; i < packet_length; ++i){
-        app[0][i] = a_priori[0][i];
-        app[1][i] = a_priori[1][i];
+        app[0][i] = (*a_priori)[0][i];
+        app[1][i] = (*a_priori)[1][i];
     }
     
     for (int i = 0; i < code.memory; i++) {
@@ -476,19 +477,28 @@ double **convcode_extrinsic(double *received, double length, double **a_priori, 
             }
 
             extrinsic[u][i] = E;
+        }
 
-            if (i < packet_length)
-                a_priori[u][i] = E;
+//        double normalization = log(exp(extrinsic[0][i]) + exp(extrinsic[1][i]));
+//        extrinsic[0][i] -= normalization;
+//        extrinsic[1][i] -= normalization;
+        if (i < packet_length)
+        {
+            (*a_priori)[0][i] = extrinsic[0][i];
+            (*a_priori)[1][i] = extrinsic[1][i];
         }
     }/*}}}*/
 
     // decision
-    /* int *decoded = malloc(packet_length * sizeof *decoded); */
-    /* for (int i = 0; i < packet_length; ++i) { */
-    /*     double one = app[1][i] + extrinsic[1][i]; */
-    /*     double zero = app[0][i] + extrinsic[0][i]; */
-    /*     decoded[i] =  one > zero; */
-    /* } */
+    int *decoded = NULL;
+    if (decision){
+        decoded = malloc(packet_length * sizeof *decoded);
+        for (int i = 0; i < packet_length; ++i) {
+            double one = app[1][i] + extrinsic[1][i];
+            double zero = app[0][i] + extrinsic[0][i];
+            decoded[i] =  one > zero;
+        }
+    }
 
     // free memory
     for (int l = 0; l < N_states; ++l) {/*{{{*/
@@ -506,7 +516,7 @@ double **convcode_extrinsic(double *received, double length, double **a_priori, 
     free(app);
     free(rho);/*}}}*/
 
-    return extrinsic;
+    return decoded;
 
     /*}}}*/
 }
