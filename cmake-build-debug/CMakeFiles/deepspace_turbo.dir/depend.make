@@ -7,6 +7,7 @@ CMakeFiles/deepspace_turbo.dir/libconvcodes.c.o: ../libconvcodes.h
 CMakeFiles/deepspace_turbo.dir/libturbocodes.c.o: ../libconvcodes.h
 CMakeFiles/deepspace_turbo.dir/libturbocodes.c.o: ../libturbocodes.c
 CMakeFiles/deepspace_turbo.dir/libturbocodes.c.o: ../libturbocodes.h
+CMakeFiles/deepspace_turbo.dir/libturbocodes.c.o: ../utilities.h
 
 CMakeFiles/deepspace_turbo.dir/main.c.o: ../colors.h
 CMakeFiles/deepspace_turbo.dir/main.c.o: ../libconvcodes.h

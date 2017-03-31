@@ -25,6 +25,8 @@ libconvcodes.h
 /home/gianluca/deepspace-turbo/libturbocodes.c
 libturbocodes.h
 /home/gianluca/deepspace-turbo/libturbocodes.h
+utilities.h
+/home/gianluca/deepspace-turbo/utilities.h
 stdlib.h
 -
 math.h
