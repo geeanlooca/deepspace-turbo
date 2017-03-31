@@ -87,26 +87,26 @@ int main(int argc, char *argv[])
 
             case 'h':
 
-                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-y / --skip-confirm", "skip confirmation dialog after"
+                printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-y / --skip-confirm", "skip confirmation dialog after"
                         " summarizing simulation parameters. Useful when automating simulations.");
 
-                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-h / --help", "print this help dialog.");
+                printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-h / --help", "print this help dialog.");
 
-                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-o / --output FILENAME", "save results in "
+                printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-o / --output FILENAME", "save results in "
                         "a comma-separated format in FILENAME. If this argument is not used, the results will be saved in "
                         "a file named with the current date and time.");
 
-                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-c / --packet-count INTEGER", "set the number of packets to encode/decode."
+                printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-c / --packet-count INTEGER", "set the number of packets to encode/decode."
                         " INTEGER can be given in exponential notation i.e. 1e4 for 10000 packets.");
 
-                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-l / --packet-length INTEGER", "set the number of information bits"
+                printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-l / --packet-length INTEGER", "set the number of information bits"
                         " in a packet. Exponential notation can be used.");
 
-                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-m / --min-SNR FLOAT", "set the lower extreme of the SNR range to test. ");
+                printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-m / --min-SNR FLOAT", "set the lower extreme of the SNR range to test. ");
 
-                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-M / --max-SNR FLOAT", "set the upper extreme of the SNR range to test. ");
+                printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-M / --max-SNR FLOAT", "set the upper extreme of the SNR range to test. ");
 
-                printf(BOLDMAGENTA "%20s" RESET "\t%s\n\n" , "-n / --SNR-points INTEGER", "set the number of linearly spaced points "
+                printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-n / --SNR-points INTEGER", "set the number of linearly spaced points "
                         "inside the interval [min-SNR, max-SNR]");
 
                 exit(EXIT_SUCCESS);
