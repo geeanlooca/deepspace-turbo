@@ -331,12 +331,13 @@ int main(int argc, char *argv[])
     fclose(file);
 
     // print results
-    printf(BOLDYELLOW "%20s%20s\n" RESET, "SNR [dB]", "BER");
+    printf(BOLDYELLOW "%20s%20s%20s\n" RESET, "SNR [dB]", "BER", "PER");
     for (int j = 0; j < SNR_points; ++j)
-       printf("%20f%20.4e\n", SNR_dB[j], BER[j]);
+       printf("%20f%20.4e%20.4e\n", SNR_dB[j], BER[j], PER[j]);
 
     // release allocated memory
     free(BER);
+    free(PER);
     free(errors);
     free(SNR_dB);
     free(sigma);
