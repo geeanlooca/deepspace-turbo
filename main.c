@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
     double *SNR_dB = linspace(min_SNR, max_SNR, SNR_points);
     double *sigma = malloc(SNR_points* sizeof *sigma);
     double *EbN0 = malloc(SNR_points * sizeof *EbN0);
-    long int *errors = calloc(SNR_points, *errors);
+    long int *errors = calloc(SNR_points, sizeof *errors);
     int *erroneous_packets = calloc(SNR_points, sizeof *erroneous_packets);//needed to estimate PER (Packer Error Probability)
     double *BER = malloc(SNR_points*sizeof *BER);
     double *PER = malloc(SNR_points*sizeof *PER);
