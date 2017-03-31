@@ -104,12 +104,12 @@ double *scalar_multiply(double *array, unsigned int length, double scalar)
     return res;/*}}}*/
 }
 
-int save_data(double *x, double *y, char *header[], unsigned int length, FILE *file)
+int save_data(double *x, double *y, double *z, char *header[], unsigned int length, FILE *file)
 {
     // write headers/*{{{*/
     fprintf(file, "%s,%s\n", header[0], header[1]);
     for (int i = 0; i < length; i++)
-        fprintf(file, "%.12f,%.12f\n", x[i], y[i]);/*}}}*/
+        fprintf(file, "%.12f,%.12f,%.12f\n", x[i], y[i], z[i]);/*}}}*/
 }
 
 double max_array(double *array, int size)

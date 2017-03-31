@@ -22,7 +22,7 @@ double mean(double *input, unsigned int length);
 
 double *scalar_multiply(double *array, unsigned int length, double scalar);
 
-int save_data(double *x, double *y, char *header[], unsigned int length, FILE *file);
+int save_data(double *x, double *y, double *z, char *header[], unsigned int length, FILE *file);
 
 double max_array(double *array, int size);
 

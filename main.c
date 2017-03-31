@@ -233,8 +233,10 @@ int main(int argc, char *argv[])
     double *SNR_dB = linspace(min_SNR, max_SNR, SNR_points);
     double *sigma = malloc(SNR_points* sizeof *sigma);
     double *EbN0 = malloc(SNR_points * sizeof *EbN0);
-    long int *errors = calloc(SNR_points, sizeof(long int));
+    long int *errors = calloc(SNR_points, *errors);
+    int *erroneous_packets = calloc(SNR_points, sizeof *erroneous_packets);//needed to estimate PER (Packer Error Probability)
     double *BER = malloc(SNR_points*sizeof *BER);
+    double *PER = malloc(SNR_points*sizeof *PER);
 
     // define first code
     int N_components = 2;
@@ -304,6 +306,7 @@ int main(int argc, char *argv[])
             for (int s = 0; s < SNR_points; s++){
 //                errors[s] += simulate_conv(packet, noise_seq_coded, info_length, sigma[s], code);
                 errors[s] += simulate_turbo(packet, noise_seq_coded, info_length, sigma[s], turbo, iterations);
+                erroneous_packets[s] += errors[s] != 0;
             }
 
             free(packet);
@@ -312,15 +315,19 @@ int main(int argc, char *argv[])
         }
     }/*}}}*/
 
-    // compute BER
+    // compute BER and PER
     for (int i = 0; i < SNR_points; i++)
+    {
+
+        PER[i] = (double) erroneous_packets[i]/(num_packets);
         BER[i] = (double) errors[i]/(num_packets*info_length);
+    }
 
     printf(BOLDGREEN "\nSimulation completed.\n\n" RESET);
 
     // save results
-    char *headers[] = {"SNR", "BER"};
-    save_data(SNR_dB, BER, headers, SNR_points, file);
+    char *headers[] = {"SNR", "BER", "PER"};
+    save_data(SNR_dB, BER, PER, headers, SNR_points, file);
     fclose(file);
 
     // print results
