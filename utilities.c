@@ -107,7 +107,7 @@ double *scalar_multiply(double *array, unsigned int length, double scalar)
 int save_data(double *x, double *y, double *z, char *header[], unsigned int length, FILE *file)
 {
     // write headers/*{{{*/
-    fprintf(file, "%s,%s\n", header[0], header[1]);
+    fprintf(file, "%s,%s,%s\n", header[0], header[1], header[2]);
     for (int i = 0; i < length; i++)
         fprintf(file, "%.12f,%.12f,%.12f\n", x[i], y[i], z[i]);/*}}}*/
 }
