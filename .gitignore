@@ -35,6 +35,9 @@ cmake-build-debug/CMakeFiles/CMakeTmp/
 *.out
 *.synctex.gz
 *.auxlock
+*.snm
+*.vrb
+*.nav
 
 
 
