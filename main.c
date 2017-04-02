@@ -15,8 +15,7 @@
 // thread routines
 int simulate_awgn(int *packet, double *noise_sequence, int packet_length, double sigma);
 int simulate_conv(int *packet, double *noise_sequence, int packet_length, double sigma, t_convcode code);
-int
-simulate_turbo(int *packet, double *noise_sequence, int packet_length, double sigma, t_turbocode code, int iterations);
+int simulate_turbo(int *packet, double *noise_sequence, int packet_length, double sigma, t_turbocode code, int iterations);
 
 
 int main(int argc, char *argv[])
