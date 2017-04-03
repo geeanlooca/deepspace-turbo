@@ -8,6 +8,71 @@
 #include <math.h>
 
 
+static int *turbo_interleave(int *packet, t_turbocode code)
+{
+    int *interleaved_packet = malloc(code.packet_length * sizeof(int));// {{{
+    for (int j = 0; j < code.packet_length; ++j) {
+        interleaved_packet[j] = packet[code.interleaver[j]];
+    }
+
+    return interleaved_packet;// }}}
+}
+
+static int *turbo_deinterleave(int *packet, t_turbocode code)
+{
+    int *local = malloc(code.packet_length*sizeof(int));// {{{
+    for (int i = 0; i < code.packet_length; ++i) {
+        local[code.interleaver[i]] = packet[i];
+    }
+
+    return local;// }}}
+}
+
+static void message_interleave(double ***messages, t_turbocode code)
+{
+    // local array// {{{
+    double **local = malloc(2*sizeof(double*));
+    local[0] = malloc(code.packet_length * sizeof(double));
+    local[1] = malloc(code.packet_length * sizeof(double));
+
+    for (int i = 0; i < code.packet_length; ++i) {
+        local[0][i] = (*messages)[0][code.interleaver[i]];
+        local[1][i] = (*messages)[1][code.interleaver[i]];
+    }
+
+    for (int i = 0; i < code.packet_length; ++i) {
+        (*messages)[0][i] = local[0][i];
+        (*messages)[1][i] = local[1][i];
+    }
+
+    free(local[0]);
+    free(local[1]);
+    free(local);// }}}
+}
+
+static void message_deinterleave(double ***messages, t_turbocode code)
+{
+     // local array// {{{
+    double **local = malloc(2*sizeof(double*));
+    local[0] = malloc(code.packet_length * sizeof(double));
+    local[1] = malloc(code.packet_length * sizeof(double));
+
+    for (int i = 0; i < code.packet_length; ++i) {
+        local[0][code.interleaver[i]] = (*messages)[0][i];
+        local[1][code.interleaver[i]] = (*messages)[1][i];
+    }
+
+    for (int i = 0; i < code.packet_length; ++i) {
+        (*messages)[0][i] = local[0][i];
+        (*messages)[1][i] = local[1][i];
+    }
+
+    free(local[0]);
+    free(local[1]);
+    free(local);// }}}
+}
+
+
 t_turbocode turbo_initialize(t_convcode upper, t_convcode lower, int *interleaver, int packet_length)
 {
     t_turbocode code;/*{{{*/
@@ -26,71 +91,6 @@ t_turbocode turbo_initialize(t_convcode upper, t_convcode lower, int *interleave
 
     return code;/*}}}*/
 }
-
-static int *turbo_interleave(int *packet, t_turbocode code)
-{
-    int *interleaved_packet = malloc(code.packet_length * sizeof(int));
-    for (int j = 0; j < code.packet_length; ++j) {
-        interleaved_packet[j] = packet[code.interleaver[j]];
-    }
-
-    return interleaved_packet;/*}}}*/
-}
-
-static int *turbo_deinterleave(int *packet, t_turbocode code)
-{
-    int *local = malloc(code.packet_length*sizeof(int));
-    for (int i = 0; i < code.packet_length; ++i) {
-        local[code.interleaver[i]] = packet[i];
-    }
-
-    return local;
-}
-
-static void message_interleave(double ***messages, t_turbocode code)
-{
-    // local array
-    double **local = malloc(2*sizeof(double*));
-    local[0] = malloc(code.packet_length * sizeof(double));
-    local[1] = malloc(code.packet_length * sizeof(double));
-
-    for (int i = 0; i < code.packet_length; ++i) {
-        local[0][i] = (*messages)[0][code.interleaver[i]];
-        local[1][i] = (*messages)[1][code.interleaver[i]];
-    }
-
-    for (int i = 0; i < code.packet_length; ++i) {
-        (*messages)[0][i] = local[0][i];
-        (*messages)[1][i] = local[1][i];
-    }
-
-    free(local[0]);
-    free(local[1]);
-    free(local);
-}
-
-static void message_deinterleave(double ***messages, t_turbocode code)
-{
-     // local array
-    double **local = malloc(2*sizeof(double*));
-    local[0] = malloc(code.packet_length * sizeof(double));
-    local[1] = malloc(code.packet_length * sizeof(double));
-
-    for (int i = 0; i < code.packet_length; ++i) {
-        local[0][code.interleaver[i]] = (*messages)[0][i];
-        local[1][code.interleaver[i]] = (*messages)[1][i];
-    }
-
-    for (int i = 0; i < code.packet_length; ++i) {
-        (*messages)[0][i] = local[0][i];
-        (*messages)[1][i] = local[1][i];
-    }
-
-    free(local[0]);
-    free(local[1]);
-    free(local);
-}
-
 
 int *turbo_encode(int *packet, t_turbocode code)
 {
