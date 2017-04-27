@@ -13,20 +13,24 @@ To define a new code, the following code snippet can be used:
 ```C
     int N_components = 2;
     char *forward[N_components];
-    forward[0] = "10011";
-    forward[1] = "10101";
+    forward[0] = "1001";
+    forward[1] = "1010";
 
     char *backward;
-    backward = "0011";
-    double rate = 1.0f/N_components;
-
-    // get noise std variation from SNR
-    for (int i = 0; i < SNR_points; i++)
-    {
-        sigma[i] = sqrt(1/ pow(10, SNR_dB[i]/10));
-        EbN0[i] = 1 / (2*rate*pow(sigma[i], 2));
-    }
+    backward = "011";
 
     // initialize turbocode: mandatory call
     t_convcode code = convcode_initialize(forward, backward, N_components);
 ```
+
+The code is defined by the strings of `1`'s and `0`'s in `forward` and `backward`. The function `convcode_initialize()` computes the state-update and output functions and allocates the necessary memory.
+
+To encode a packet, we can simply do
+```C
+    int packet_length = 1000;
+    int *packet = randbits(packet_length);
+    int *encoded_packet = convcode_encode(packet, packet_length, code);
+```
+
+Function `randbits` simply generates an array of `0`'s and `1`'s of a given length, and is implemented in `utilities.c`
+
