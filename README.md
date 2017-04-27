@@ -8,7 +8,6 @@ The libraries I wrote for both convolutional and turbo codes are fairly flexible
 ## Convolutional Codes
 [Convolutional codes](https://en.wikipedia.org/wiki/Convolutional_code) are essentially discrete-time filters that work on a binary field. Although they can be defined on any [finite field](https://en.wikipedia.org/wiki/Finite_field), I only considered the binary case.
 
-
 ### Defining a code
 To define a new code, the following code snippet can be used:
 
@@ -21,12 +20,11 @@ To define a new code, the following code snippet can be used:
     char *backward;
     backward = "011";
 
-    // initialize turbocode: mandatory call
+    // initialize convolutional code: mandatory call
     t_convcode code = convcode_initialize(forward, backward, N_components);
 ```
 
-The code is defined by the strings of `1`'s and `0`'s in `forward` and `backward`. The function `convcode_initialize()` computes the state-update and output functions and allocates the necessary memory.
-
+The code is defined by the strings of `1`'s and `0`'s in `forward` and `backward`. The function `convcode_initialize()` computes the state-update and output functions and allocates the necessary memory. The rate of the resulting code will be `1/N_components`. 
 
 ### Encoding
 To encode a packet, we can simply do
@@ -57,11 +55,12 @@ An example of modulating/trasmitting an encoded packet and then decoding it usin
 
     // generate PAM symbols and add noise
     for (int i = 0; i < encoded_length; i++)
-        received[i] = (2*encoded_packet[i] - 1) +noise_sequence[i];
+        received[i] = (2*encoded_packet[i] - 1) + noise_sequence[i];
 
     int *decoded = convcode_decode(received_signal, packet_length, code);
 
 ```
+The function `randn` returns an array of a given length containing independent and identically distributed samples from a Gaussian distribution with given mean and variance.
 
 #### BCJR algorithm
 This algorithm isn't useful for plain convolutional decoding, as its performance are identical to those of Viterbi's algorithm, but with a higher complexity. It might be used when we have prior knowledge on certain bits, or if we need the posterior probabilities on the decoded bits.
@@ -86,5 +85,71 @@ A snipped illustrating its use is given below.
                                         &a_priori, code, sigma*sigma, perform_decision);
 ```
 
-We can decide wheter we want the function to return the decoded packet or just the posterior probabilities. This is done by setting `perform_decision` to `1`. Note that every cell of the `a_priori` matrix was initialized to `log(0.5)`, indicating that we have no prior knowledge on the bits (they can be either `0` or `1` with probability 0.5).
+We can decide wheter we want the function to return the decoded packet or just the posterior probabilities. This is done by setting `perform_decision` to `1`, while setting it to `0` will cause the function to skip the decision process and just compute the posterior probabilities. Note that every cell of the `a_priori` matrix was initialized to `log(0.5)`, indicating that we have no prior knowledge on the bits (they can be either `0` or `1` with probability 0.5).
 
+## Turbo Codes
+[Turbo codes](https://en.wikipedia.org/wiki/Turbo_code) are powerful codes that are built by concatenating two (or more) convolutional codes in parallel. These convolutional codes are fed with different versions of the input packet, built by scrambling its symbols according to a certain rule, defined by an interleaving function.
+
+As of now, the library only supports binary turbo codes with two inner convolutional codes: we define the **upper code** and the **lower code**. The first is fed with the original input packet, while the second with its interleaved version.
+
+### Building an interleaver
+An intereaver takes as input the original uncoded packet and returns it scrambled. The rule according to which the scrambling is done is arbitrary, but keep in mind that the performance of the code greatly depends on the quality of the interleaver.
+
+In terms of programming, the interleaver is just an array: the bit in position `i` of the interleaved packet is the bit in position `interleaver[i]` of the original packet.
+As an example, we build an interleaver which just reverse the input packet
+```C
+int *interleaver = malloc(packet_length * sizeof *interleaver);
+for (int i = 0; i < packet_length; i++){
+    interleaver[i] = packet_length - 1 - i;
+}
+```
+
+### Defining a code
+Now that we built an interleaver, we need to define the two convolutional codes that are used by the turbo code
+```C
+    // define first code
+    int N_components = 2;
+    char *forward_upper[N_components];
+    forward_upper[0] = "1001";
+    forward_upper[1] = "1010";
+
+    char *backward_upper;
+    backward_upper = "011";
+
+    // define second code
+    int N_components = 3;
+    char *forward_lower[N_components];
+    forward_lower[0] = "1001";
+    forward_lower[1] = "1010";
+    forward_lower[1] = "1110";
+
+    char *backward_lower;
+    backward_lower = "110";
+
+    // initialize convolutional codes: mandatory call
+    t_convcode upper_code = convcode_initialize(forward_upper, backward_upper, N_components);
+    t_convcode lower_code = convcode_initialize(forward_lower, backward_lower, N_components);
+```
+After defining the components, we can initialize the turbo code in the following way
+```C
+    t_turbocode turbo = turbo_initialize(upper_code, lower_code, interleaver, packet_length);
+```
+Notice that we already provide the input packet length to the initialization function. This means that the code must be redefined (along with the interleaver) if we want to change the input packet length.
+
+### Encoding and decoding
+These two operations are fairly straightforward. We illustrate them with the following piece of code
+
+```C
+    // encode the packet
+    int *encoded = turbo_encode(packet, turbo);
+    int encoded_length = code.encoded_length;
+
+    // generate PAM symbols and add noise
+    double *received = malloc(encoded_length * sizeof *received);
+    for (int i = 0; i < encoded_length; i++)
+        received[i] = (2*encoded[i] - 1) + noise_sequence[i];
+
+    int *decoded = turbo_decode(received, iterations, sigma*sigma, code);
+```
+
+## Puncturing
