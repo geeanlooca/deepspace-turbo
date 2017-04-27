@@ -66,7 +66,7 @@ An example of modulating/trasmitting an encoded packet and then decoding it usin
 #### BCJR algorithm
 This algorithm isn't useful for plain convolutional decoding, as its performance are identical to those of Viterbi's algorithm, but with a higher complexity. It might be used when we have prior knowledge on certain bits, or if we need the posterior probabilities on the decoded bits.
 
-The BCJR decoding is performed by the `convcode_extrinsic` function, which takes a `2-by-packet_length`-size matrix containing the logarithm of the A Priori Probabilities (APP) on the packet, both for bit `0` and bit `1`.
+The BCJR decoding is performed by the `convcode_extrinsic` function, which takes a `2-by-packet_length` matrix containing the logarithm of the A Priori Probabilities (APP) on the packet, both for bit `0` and bit `1`.
 
 
 A snipped illustrating its use is given below.
@@ -83,8 +83,8 @@ A snipped illustrating its use is given below.
     int perform_decision = 1;
 
     int *decoded = convcode_extrinsic(received_signal, encoded_length,
-    &a_priori, code, sigma*sigma, perform_decision);
+                                        &a_priori, code, sigma*sigma, perform_decision);
 ```
 
-We can decide wheter we want the function to return the decoded packet or just the posterior probabilities. This is done by assigning `1` to `perform_decision`. The posterior probabilities are saved in the same matrix passed as an argument (`a_priori` in this case). 
+We can decide wheter we want the function to return the decoded packet or just the posterior probabilities. This is done by setting `perform_decision` to `1`. Note that every cell of the `a_priori` matrix was initialized to `log(0.5)`, indicating that we have no prior knowledge on the bits (they can be either `0` or `1` with probability 0.5).
 
