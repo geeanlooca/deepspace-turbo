@@ -4,6 +4,7 @@ Implementation of the [CCSDS](https://public.ccsds.org/default.aspx) (Consultati
 This is the code I wrote as the final project for the Channel Coding course at the University of Padova (Italy). The goal was to test the performance (both bit-error-rate and packet-error-rate) of an assigned channel coding standard in a AWGN scenario.
 
 The libraries I wrote for both convolutional and turbo codes are fairly flexible, in the sense that they can handle a generic code given by the user.
+Of course, since this was initially just an implementation of the already mentioned standard, the `main.c` file is written with that in mind, meaning that it will contain the initialization of the codes defined in the CCSDS' document and the lines of codes to assess their performace.
 
 ## Convolutional Codes
 [Convolutional codes](https://en.wikipedia.org/wiki/Convolutional_code) are essentially discrete-time filters that work on a binary field. Although they can be defined on any [finite field](https://en.wikipedia.org/wiki/Finite_field), I only considered the binary case.
@@ -93,10 +94,10 @@ We can decide wheter we want the function to return the decoded packet or just t
 As of now, the library only supports binary turbo codes with two inner convolutional codes: we define the **upper code** and the **lower code**. The first is fed with the original input packet, while the second with its interleaved version.
 
 ### Building an interleaver
-An intereaver takes as input the original uncoded packet and returns it scrambled. The rule according to which the scrambling is done is arbitrary, but keep in mind that the performance of the code greatly depends on the quality of the interleaver.
+An interleaver takes the original uncoded packet as input and returns it scrambled. The rule according to which the scrambling is done is arbitrary, but keep in mind that the performance of the code greatly depends on the quality of the interleaver.
 
 In terms of programming, the interleaver is just an array: the bit in position `i` of the interleaved packet is the bit in position `interleaver[i]` of the original packet.
-As an example, we build an interleaver which just reverse the input packet
+As an example, we build an interleaver that just flips the input packet
 ```C
 int *interleaver = malloc(packet_length * sizeof *interleaver);
 for (int i = 0; i < packet_length; i++){
@@ -121,7 +122,7 @@ Now that we built an interleaver, we need to define the two convolutional codes 
     char *forward_lower[N_components];
     forward_lower[0] = "1001";
     forward_lower[1] = "1010";
-    forward_lower[1] = "1110";
+    forward_lower[2] = "1110";
 
     char *backward_lower;
     backward_lower = "110";
@@ -134,7 +135,7 @@ After defining the components, we can initialize the turbo code in the following
 ```C
     t_turbocode turbo = turbo_initialize(upper_code, lower_code, interleaver, packet_length);
 ```
-Notice that we already provide the input packet length to the initialization function. This means that the code must be redefined (along with the interleaver) if we want to change the input packet length.
+Notice that we already pass the input packet length to the initialization function. This means that the code (along with the interleaver) must be redefined if we want to change this parameter.
 
 ### Encoding and decoding
 These two operations are fairly straightforward. We illustrate them with the following piece of code
