@@ -3,8 +3,8 @@ Implementation of the [CCSDS](https://public.ccsds.org/default.aspx) (Consultati
 
 This is the code I wrote as the final project for the Channel Coding course at the University of Padova (Italy). The goal was to test the performance (both bit-error-rate and packet-error-rate) of an assigned channel coding standard in a AWGN scenario.
 
-The libraries I wrote for both convolutional and turbo codes are fairly flexible, in the sense that they can handle a generic code given by the user.
-Of course, since this was initially just an implementation of the already mentioned standard, the `main.c` file is written with that in mind, meaning that it will contain the initialization of the codes defined in the CCSDS' document and the lines of codes to assess their performace.
+The libraries I wrote for both convolutional and Turbo Codes are fairly flexible, in the sense that they can handle a generic code given by the user.
+Of course, since this was initially just an implementation of the already mentioned standard, the `main.c` file is written with that in mind, meaning that it will contain the initialization of the codes defined in the CCSDS' document and the lines of code to assess their performace.
 
 ## Convolutional Codes
 [Convolutional codes](https://en.wikipedia.org/wiki/Convolutional_code) are essentially discrete-time filters that work on a binary field. Although they can be defined on any [finite field](https://en.wikipedia.org/wiki/Finite_field), I only considered the binary case.
@@ -64,7 +64,7 @@ An example of modulating/trasmitting an encoded packet and then decoding it usin
 The function `randn` returns an array of a given length containing independent and identically distributed samples from a Gaussian distribution with given mean and variance.
 
 #### BCJR algorithm
-This algorithm isn't useful for plain convolutional decoding, as its performance are identical to those of Viterbi's algorithm, but with a higher complexity. It might be used when we have prior knowledge on certain bits, or if we need the posterior probabilities on the decoded bits.
+This algorithm isn't useful for plain convolutional decoding, as its performance are identical to those of Viterbi's algorithm, but with a higher complexity. It might be used when we have prior knowledge on certain bits, or if we need the posterior probabilities on the decoded bits. On the other hand, it's the building blog for decoding Turbo Codes.
 
 The BCJR decoding is performed by the `convcode_extrinsic` function, which takes a `2-by-packet_length` matrix containing the logarithm of the A Priori Probabilities (APP) on the packet, both for bit `0` and bit `1`.
 
@@ -91,7 +91,7 @@ We can decide wheter we want the function to return the decoded packet or just t
 ## Turbo Codes
 [Turbo codes](https://en.wikipedia.org/wiki/Turbo_code) are powerful codes that are built by concatenating two (or more) convolutional codes in parallel. These convolutional codes are fed with different versions of the input packet, built by scrambling its symbols according to a certain rule, defined by an interleaving function.
 
-As of now, the library only supports binary turbo codes with two inner convolutional codes: we define the **upper code** and the **lower code**. The first is fed with the original input packet, while the second with its interleaved version.
+As of now, the library only supports binary Turbo Codes with two inner convolutional codes: we define the **upper code** and the **lower code**. The first is fed with the original input packet, while the second with its interleaved version.
 
 ### Building an interleaver
 An interleaver takes the original uncoded packet as input and returns it scrambled. The rule according to which the scrambling is done is arbitrary, but keep in mind that the performance of the code greatly depends on the quality of the interleaver.
@@ -106,7 +106,7 @@ for (int i = 0; i < packet_length; i++){
 ```
 
 ### Defining a code
-Now that we built an interleaver, we need to define the two convolutional codes that are used by the turbo code
+Now that we built an interleaver, we need to define the two convolutional codes that are used by the Turbo Code
 ```C
     // define first code
     int N_components = 2;
@@ -131,7 +131,7 @@ Now that we built an interleaver, we need to define the two convolutional codes 
     t_convcode upper_code = convcode_initialize(forward_upper, backward_upper, N_components);
     t_convcode lower_code = convcode_initialize(forward_lower, backward_lower, N_components);
 ```
-After defining the components, we can initialize the turbo code in the following way
+After defining the components, we can initialize the Turbo Code in the following way
 ```C
     t_turbocode turbo = turbo_initialize(upper_code, lower_code, interleaver, packet_length);
 ```
