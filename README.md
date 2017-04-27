@@ -34,12 +34,30 @@ To encode a packet, we can simply do
     int packet_length = 1000;
     int *packet = randbits(packet_length);
     int *encoded_packet = convcode_encode(packet, packet_length, code);
+    int encoded_length = code.components*(packet_length + code.memory);
 ```
 
-Function `randbits` simply generates an array of `0`'s and `1`'s of a given length, and is implemented in `utilities.c`.
+Function `randbits` simply generates an array of `0`'s and `1`'s of a given length, and is implemented in `utilities.c`. The length of the encoded packet is contained in `encoded_length`.
 
 ### Decoding
 There are two algorithms that can be used for decoding a received signal:
-* Viterbi algorithm
-* Forward-Backward algorithm (or BCJR)
+* [Viterbi algorithm](https://en.wikipedia.org/wiki/Viterbi_decoder), implements optimal maximum-likelihood decoding.
+* Forward-Backward algorithm (or [BCJR](http://ieeexplore.ieee.org/document/1055186/)), implements the MAP criterion.
+
+When using a pure convolutional code, the first algorithm should be preferred. 
+An example of modulating/trasmitting an encoded packet and then decoding it is
+
+```C
+    // generate Gaussian noise with 0 mean and unit variance
+    double *noise_sequence = randn(0, sigma, packet_length);
+
+    double *received_signal = malloc(encoded_length * sizeof *received_signal);
+
+    // generate PAM symbols and add noise
+    for (int i = 0; i < encoded_length; i++)
+        received[i] = (2*encoded_packet[i] - 1) +noise_sequence[i];
+
+    int *decoded = convcode_decode(received_signal, packet_length, code);
+
+```
 
