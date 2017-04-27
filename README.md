@@ -82,8 +82,9 @@ A snipped illustrating its use is given below.
 
     int perform_decision = 1;
 
-    int *decoded = convcode_extrinsic(received_signal, encoded_length, &a_priori, code, sigma*sigma, perform_decision);
-
-
+    int *decoded = convcode_extrinsic(received_signal, encoded_length,
+    &a_priori, code, sigma*sigma, perform_decision);
 ```
-We can decide wheter we want the function to return the decoded packet or just the posterior probabilities. This is done by assigning `1` to `perform_decision`. The posterior probabilities are saved in the same matrix passed as an argument. 
+
+We can decide wheter we want the function to return the decoded packet or just the posterior probabilities. This is done by assigning `1` to `perform_decision`. The posterior probabilities are saved in the same matrix passed as an argument (`a_priori` in this case). 
+
