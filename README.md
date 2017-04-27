@@ -8,6 +8,8 @@ The libraries I wrote for both convolutional and turbo codes are fairly flexible
 ## Convolutional Codes
 [Convolutional codes](https://en.wikipedia.org/wiki/Convolutional_code) are essentially discrete-time filters that work on a binary field. Although they can be defined on any [finite field](https://en.wikipedia.org/wiki/Finite_field), I only considered the binary case.
 
+
+### Defining a code
 To define a new code, the following code snippet can be used:
 
 ```C
@@ -25,6 +27,8 @@ To define a new code, the following code snippet can be used:
 
 The code is defined by the strings of `1`'s and `0`'s in `forward` and `backward`. The function `convcode_initialize()` computes the state-update and output functions and allocates the necessary memory.
 
+
+### Encoding
 To encode a packet, we can simply do
 ```C
     int packet_length = 1000;
@@ -32,5 +36,10 @@ To encode a packet, we can simply do
     int *encoded_packet = convcode_encode(packet, packet_length, code);
 ```
 
-Function `randbits` simply generates an array of `0`'s and `1`'s of a given length, and is implemented in `utilities.c`
+Function `randbits` simply generates an array of `0`'s and `1`'s of a given length, and is implemented in `utilities.c`.
+
+### Decoding
+There are two algorithms that can be used for decoding a received signal:
+* Viterbi algorithm
+* Forward-Backward algorithm (or BCJR)
 
