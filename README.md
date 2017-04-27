@@ -64,7 +64,7 @@ An example of modulating/trasmitting an encoded packet and then decoding it usin
 The function `randn` returns an array of a given length containing independent and identically distributed samples from a Gaussian distribution with given mean and variance.
 
 #### BCJR algorithm
-This algorithm isn't useful for plain convolutional decoding, as its performance are identical to those of Viterbi's algorithm, but with a higher complexity. It might be used when we have prior knowledge on certain bits, or if we need the posterior probabilities on the decoded bits. On the other hand, it's the building blog for decoding Turbo Codes.
+This algorithm isn't useful for plain convolutional decoding, as its performance are identical to those of Viterbi's algorithm, but with a higher complexity. It might be used when we have prior knowledge on certain bits, or if we need the posterior probabilities on the decoded bits. On the other hand, this algorithm is the fundamental building block for the decoding of Turbo Codes.
 
 The BCJR decoding is performed by the `convcode_extrinsic` function, which takes a `2-by-packet_length` matrix containing the logarithm of the A Priori Probabilities (APP) on the packet, both for bit `0` and bit `1`.
 
