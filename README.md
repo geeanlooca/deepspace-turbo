@@ -64,4 +64,26 @@ An example of modulating/trasmitting an encoded packet and then decoding it usin
 ```
 
 #### BCJR algorithm
+This algorithm isn't useful for plain convolutional decoding, as its performance are identical to those of Viterbi's algorithm, but with a higher complexity. It might be used when we have prior knowledge on certain bits, or if we need the posterior probabilities on the decoded bits.
 
+The BCJR decoding is performed by the `convcode_extrinsic` function, which takes a `2-by-packet_length`-size matrix containing the logarithm of the A Priori Probabilities (APP) on the packet, both for bit `0` and bit `1`.
+
+
+A snipped illustrating its use is given below.
+```C
+    // build a priori probabilities on bits
+    double **a_priori = malloc(2*sizeof(double*));
+    for (int k = 0; k < 2; ++k) {
+        a_priori[k] = malloc(packet_length * sizeof(double));
+        for (int i = 0; i < packet_length; ++i) {
+            a_priori[k][i] = log(0.5);
+        }
+    }
+
+    int perform_decision = 1;
+
+    int *decoded = convcode_extrinsic(received_signal, encoded_length, &a_priori, code, sigma*sigma, perform_decision);
+
+
+```
+We can decide wheter we want the function to return the decoded packet or just the posterior probabilities. This is done by assigning `1` to `perform_decision`. The posterior probabilities are saved in the same matrix passed as an argument. 
