@@ -1,10 +1,12 @@
 # deepspace-turbo
 Implementation of the [CCSDS](https://public.ccsds.org/default.aspx) (Consultative Committee for Space Data Systems) 131.0-B-2 standard [_TM Synchronization and Channel Coding_](https://github.com/geeanlooca/deepspace-turbo/blob/master/standard.pdf) for Turbo Codes.
 
-This is the code I wrote as the final project for the Channel Coding course at the University of Padova (Italy). The goal was to test the performance (both bit-error-rate and packet-error-rate) of an assigned channel coding standard in a AWGN scenario.
+This is the code I wrote as the final project for the Channel Coding course at the University of Padova (Italy). The goal was to test the performance (both bit-error-rate and packet-error-rate) of an assigned channel coding standard in a AWGN scenario. The slides used for the presentation are available in `presentation/`. 
 
 The libraries I wrote for both convolutional and Turbo Codes are fairly flexible, in the sense that they can handle a generic code given by the user.
-Of course, since this was initially just an implementation of the already mentioned standard, the `main.c` file is written with that in mind, meaning that it will contain the initialization of the codes defined in the CCSDS' document and the lines of code to assess their performace.
+Of course, since this was initially just an implementation of the already mentioned standard, the `main.c` file is written with that in mind, meaning that it will contain the initialization of the codes defined in the CCSDS' document and the lines of code to assess their performance.
+
+## Building and running the program
 
 ## Convolutional Codes
 [Convolutional codes](https://en.wikipedia.org/wiki/Convolutional_code) are essentially discrete-time filters that work on a binary field. Although they can be defined on any [finite field](https://en.wikipedia.org/wiki/Finite_field), I only considered the binary case.
