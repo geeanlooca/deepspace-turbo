@@ -45,7 +45,9 @@ There are two algorithms that can be used for decoding a received signal:
 * Forward-Backward algorithm (or [BCJR](http://ieeexplore.ieee.org/document/1055186/)), implements the MAP criterion.
 
 When using a pure convolutional code, the first algorithm should be preferred. 
-An example of modulating/trasmitting an encoded packet and then decoding it is
+
+#### Viterbi algorithm
+An example of modulating/trasmitting an encoded packet and then decoding it using the Viterbi algorithm is
 
 ```C
     // generate Gaussian noise with 0 mean and unit variance
@@ -60,4 +62,5 @@ An example of modulating/trasmitting an encoded packet and then decoding it is
     int *decoded = convcode_decode(received_signal, packet_length, code);
 
 ```
+
 
