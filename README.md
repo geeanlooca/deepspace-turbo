@@ -15,16 +15,16 @@ Of course, since this was initially just an implementation of the already mentio
 To define a new code, the following code snippet can be used:
 
 ```C
-    int N_components = 2;
-    char *forward[N_components];
-    forward[0] = "1001";
-    forward[1] = "1010";
+int N_components = 2;
+char *forward[N_components];
+forward[0] = "1001";
+forward[1] = "1010";
 
-    char *backward;
-    backward = "011";
+char *backward;
+backward = "011";
 
-    // initialize convolutional code: mandatory call
-    t_convcode code = convcode_initialize(forward, backward, N_components);
+// initialize convolutional code: mandatory call
+t_convcode code = convcode_initialize(forward, backward, N_components);
 ```
 
 The code is defined by the strings of `1`'s and `0`'s in `forward` and `backward`. The function `convcode_initialize()` computes the state-update and output functions and allocates the necessary memory. The rate of the resulting code will be `1/N_components`. 
@@ -32,10 +32,10 @@ The code is defined by the strings of `1`'s and `0`'s in `forward` and `backward
 ### Encoding
 To encode a packet, we can simply do
 ```C
-    int packet_length = 1000;
-    int *packet = randbits(packet_length);
-    int *encoded_packet = convcode_encode(packet, packet_length, code);
-    int encoded_length = code.components*(packet_length + code.memory);
+int packet_length = 1000;
+int *packet = randbits(packet_length);
+int *encoded_packet = convcode_encode(packet, packet_length, code);
+int encoded_length = code.components*(packet_length + code.memory);
 ```
 
 Function `randbits` simply generates an array of `0`'s and `1`'s of a given length, and is implemented in `utilities.c`. The length of the encoded packet is contained in `encoded_length`.
@@ -51,16 +51,16 @@ When using a pure convolutional code, the first algorithm should be preferred.
 An example of modulating/trasmitting an encoded packet and then decoding it using the Viterbi algorithm is
 
 ```C
-    // generate Gaussian noise with 0 mean and unit variance
-    double *noise_sequence = randn(0, sigma, packet_length);
+// generate Gaussian noise with 0 mean and unit variance
+double *noise_sequence = randn(0, sigma, packet_length);
 
-    double *received_signal = malloc(encoded_length * sizeof *received_signal);
+double *received_signal = malloc(encoded_length * sizeof *received_signal);
 
-    // generate PAM symbols and add noise
-    for (int i = 0; i < encoded_length; i++)
-        received[i] = (2*encoded_packet[i] - 1) + noise_sequence[i];
+// generate PAM symbols and add noise
+for (int i = 0; i < encoded_length; i++)
+    received[i] = (2*encoded_packet[i] - 1) + noise_sequence[i];
 
-    int *decoded = convcode_decode(received_signal, packet_length, code);
+int *decoded = convcode_decode(received_signal, packet_length, code);
 
 ```
 The function `randn` returns an array of a given length containing independent and identically distributed samples from a Gaussian distribution with given mean and variance.
@@ -73,19 +73,19 @@ The BCJR decoding is performed by the `convcode_extrinsic` function, which takes
 
 A snipped illustrating its use is given below.
 ```C
-    // build a priori probabilities on bits
-    double **a_priori = malloc(2*sizeof(double*));
-    for (int k = 0; k < 2; ++k) {
-        a_priori[k] = malloc(packet_length * sizeof(double));
-        for (int i = 0; i < packet_length; ++i) {
-            a_priori[k][i] = log(0.5);
-        }
+// build a priori probabilities on bits
+double **a_priori = malloc(2*sizeof(double*));
+for (int k = 0; k < 2; ++k) {
+    a_priori[k] = malloc(packet_length * sizeof(double));
+    for (int i = 0; i < packet_length; ++i) {
+        a_priori[k][i] = log(0.5);
     }
+}
 
-    int perform_decision = 1;
+int perform_decision = 1;
 
-    int *decoded = convcode_extrinsic(received_signal, encoded_length,
-                                        &a_priori, code, sigma*sigma, perform_decision);
+int *decoded = convcode_extrinsic(received_signal, encoded_length,
+                                    &a_priori, code, sigma*sigma, perform_decision);
 ```
 
 We can decide wheter we want the function to return the decoded packet or just the posterior probabilities. This is done by setting `perform_decision` to `1`, while setting it to `0` will cause the function to skip the decision process and just compute the posterior probabilities. Note that every cell of the `a_priori` matrix was initialized to `log(0.5)`, indicating that we have no prior knowledge on the bits (they can be either `0` or `1` with probability 0.5).
@@ -110,32 +110,32 @@ for (int i = 0; i < packet_length; i++){
 ### Defining a code
 Now that we built an interleaver, we need to define the two convolutional codes that are used by the Turbo Code
 ```C
-    // define first code
-    int N_components = 2;
-    char *forward_upper[N_components];
-    forward_upper[0] = "1001";
-    forward_upper[1] = "1010";
+// define first code
+int N_components = 2;
+char *forward_upper[N_components];
+forward_upper[0] = "1001";
+forward_upper[1] = "1010";
 
-    char *backward_upper;
-    backward_upper = "011";
+char *backward_upper;
+backward_upper = "011";
 
-    // define second code
-    int N_components = 3;
-    char *forward_lower[N_components];
-    forward_lower[0] = "1001";
-    forward_lower[1] = "1010";
-    forward_lower[2] = "1110";
+// define second code
+int N_components = 3;
+char *forward_lower[N_components];
+forward_lower[0] = "1001";
+forward_lower[1] = "1010";
+forward_lower[2] = "1110";
 
-    char *backward_lower;
-    backward_lower = "110";
+char *backward_lower;
+backward_lower = "110";
 
-    // initialize convolutional codes: mandatory call
-    t_convcode upper_code = convcode_initialize(forward_upper, backward_upper, N_components);
-    t_convcode lower_code = convcode_initialize(forward_lower, backward_lower, N_components);
+// initialize convolutional codes: mandatory call
+t_convcode upper_code = convcode_initialize(forward_upper, backward_upper, N_components);
+t_convcode lower_code = convcode_initialize(forward_lower, backward_lower, N_components);
 ```
 After defining the components, we can initialize the Turbo Code in the following way
 ```C
-    t_turbocode turbo = turbo_initialize(upper_code, lower_code, interleaver, packet_length);
+t_turbocode turbo = turbo_initialize(upper_code, lower_code, interleaver, packet_length);
 ```
 Notice that we already pass the input packet length to the initialization function. This means that the code (along with the interleaver) must be redefined if we want to change this parameter.
 
@@ -143,16 +143,16 @@ Notice that we already pass the input packet length to the initialization functi
 These two operations are fairly straightforward. We illustrate them with the following piece of code
 
 ```C
-    // encode the packet
-    int *encoded = turbo_encode(packet, turbo);
-    int encoded_length = code.encoded_length;
+// encode the packet
+int *encoded = turbo_encode(packet, turbo);
+int encoded_length = code.encoded_length;
 
-    // generate PAM symbols and add noise
-    double *received = malloc(encoded_length * sizeof *received);
-    for (int i = 0; i < encoded_length; i++)
-        received[i] = (2*encoded[i] - 1) + noise_sequence[i];
+// generate PAM symbols and add noise
+double *received = malloc(encoded_length * sizeof *received);
+for (int i = 0; i < encoded_length; i++)
+    received[i] = (2*encoded[i] - 1) + noise_sequence[i];
 
-    int *decoded = turbo_decode(received, iterations, sigma*sigma, code);
+int *decoded = turbo_decode(received, iterations, sigma*sigma, code);
 ```
 
 ## Puncturing
