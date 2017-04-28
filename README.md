@@ -111,8 +111,8 @@ for (int i = 0; i < packet_length; i++){
 Now that we built an interleaver, we need to define the two convolutional codes that are used by the Turbo Code
 ```C
 // define first code
-int N_components = 2;
-char *forward_upper[N_components];
+int N_components_upper = 2;
+char *forward_upper[N_components_upper];
 forward_upper[0] = "1001";
 forward_upper[1] = "1010";
 
@@ -120,8 +120,8 @@ char *backward_upper;
 backward_upper = "011";
 
 // define second code
-int N_components = 3;
-char *forward_lower[N_components];
+int N_components_lower = 3;
+char *forward_lower[N_components_lower];
 forward_lower[0] = "1001";
 forward_lower[1] = "1010";
 forward_lower[2] = "1110";
@@ -130,8 +130,8 @@ char *backward_lower;
 backward_lower = "110";
 
 // initialize convolutional codes: mandatory call
-t_convcode upper_code = convcode_initialize(forward_upper, backward_upper, N_components);
-t_convcode lower_code = convcode_initialize(forward_lower, backward_lower, N_components);
+t_convcode upper_code = convcode_initialize(forward_upper, backward_upper, N_components_upper);
+t_convcode lower_code = convcode_initialize(forward_lower, backward_lower, N_components_lower);
 ```
 After defining the components, we can initialize the Turbo Code in the following way
 ```C
