@@ -8,15 +8,17 @@ This is the code I wrote for the final project of the Channel Coding course at t
 The libraries I wrote for both convolutional and Turbo Codes are fairly flexible, in the sense that they can handle a generic code given by the user.
 Of course, since this was initially just an implementation of the already mentioned standard, the `main.c` file is written with that in mind, meaning that it will contain the initialization of the codes defined in the CCSDS' document and the lines of code to assess their performance.
 
-## Compiling/Building/Running
+## Instructions
 
 ### Dependencies
 - gcc / clang
 - OpenMP (only needed in the `main.c` file to speed up the simulation)
 
-If you use CLion as an IDE you can directly import the project and compile/build it from there. In any other case, either compile every single source code or wait for a decent Makefile :)
+If you use [CLion](https://www.jetbrains.com/clion/) as an IDE you can directly import the project and compile/build it from there. In any other case, either compile every single source code or wait for a decent Makefile :)
 
 For the presentation, I used the Beamer theme [Metropolis](https://github.com/matze/mtheme). Refer to the previous link for instructions.
+
+---
 
 ## Convolutional Codes
 [Convolutional codes](https://en.wikipedia.org/wiki/Convolutional_code) are essentially discrete-time filters that work on a binary field. Although they can be defined on any [finite field](https://en.wikipedia.org/wiki/Finite_field), I only considered the binary case.
