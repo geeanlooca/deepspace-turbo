@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
     float max_SNR = 2;
     int cores = 4;
     int iterations = 2;
+    int octets = 1;
 
     char filename[PATH_MAX];
 
@@ -54,13 +55,14 @@ int main(int argc, char *argv[])
                         {"max-SNR",         required_argument,  0,  'M'},
                         {"SNR-points",      required_argument,  0,  'n'},
                         {"iterations",      required_argument,  0,  'i'},
+                        {"multiplier",      required_argument,  0,  'k'},
                         {"help",            no_argument,        0,  'h'},
                         {0, 0, 0, 0}
                 };
 
         int option_index = 0;
 
-        c = getopt_long(argc, argv, "yhl:c:C:m:M:f:b:o:n:i:", long_options, &option_index);
+        c = getopt_long(argc, argv, "yhl:c:C:m:M:f:b:o:n:i:k:", long_options, &option_index);
 
         if (c == -1)
             break;
@@ -102,6 +104,11 @@ int main(int argc, char *argv[])
                 printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-c / --packet-count INTEGER", "set the number of packets to encode/decode."
                         " INTEGER can be given in exponential notation i.e. 1e4 for 10000 packets.");
 
+                printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-C / --cores INTEGER", "set the number of CPU cores to use.");
+
+                printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-k / --multiplier INT", "set the input packet length through the following "
+                        " formula: packet-length = 223 * 8 * multiplier");
+
                 printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-l / --packet-length INTEGER", "set the number of information bits"
                         " in a packet. Exponential notation can be used.");
 
@@ -129,6 +136,10 @@ int main(int argc, char *argv[])
 
             case 'i':
                 iterations = (int)strtol(optarg, NULL, 10);
+                break;
+
+            case 'k':
+                octets = (int)strtol(optarg, NULL, 10);
                 break;
 
             case 'o':
@@ -166,6 +177,11 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    if (octets <= 0){
+        printf(BOLDRED "Packet length multiplier must be strictly positive.\n" RESET);
+        exit(EXIT_FAILURE);
+    }
+
     // handle filename
     if (!filename_flag){
         // generate timestamp filename.
@@ -175,6 +191,25 @@ int main(int argc, char *argv[])
         strftime(filename, sizeof(filename), "%Y-%m-%d_%H-%M-%S.csv", time_);
 
         printf("Output filename not provided. File " BOLDMAGENTA "\'%s\'" RESET " will be used. \n", filename);
+    }
+
+    // build interleaver
+    int base = 223;
+    int info_length = base * 8 * octets;
+    int p[8] = {31, 37, 43, 47, 53, 59, 61, 67};
+    int k1 = 8;
+    int k2 = base * octets;
+
+    int *pi = malloc(info_length * sizeof *pi);
+
+    for (int s = 1; s <= info_length; ++s) {
+        int m = (s-1) % 2;
+        int i = (int) floor((s-1) / (2 * k2));
+        int j = (int) floor((s-1) / 2) - i*k2;
+        int t = (19*i + 1) % (k1/2);
+        int q = t % 8 + 1;
+        int c = (p[q-1]*j + 21*m) % k2;
+        pi[s-1] = 2*(t + c*(k1/2) + 1) - m - 1;
     }
 
     // print simulation parameters
@@ -197,7 +232,7 @@ int main(int argc, char *argv[])
         }
 
         char data_str[256];
-        sprintf(data_str, "|%-*d|%-*d|%-*f|%-*f|%-*d|", w, packet_length, w, num_packets,
+        sprintf(data_str, "|%-*d|%-*d|%-*f|%-*f|%-*d|", w, info_length, w, num_packets,
                 w, min_SNR, w, max_SNR, w, SNR_points);
         printf("\n%s\n", data_str);
 
@@ -257,32 +292,10 @@ int main(int argc, char *argv[])
     // initialize turbocode: mandatory call
     t_convcode code = convcode_initialize(forward, backward, N_components);
 
-    // build interleaver
-    int octets = 1;
-    int base = 223;
-    int info_length = base * 8 * octets;
-    int p[8] = {31, 37, 43, 47, 53, 59, 61, 67};
-    int k1 = 8;
-    int k2 = base * octets;
-
-    int *pi = malloc(info_length * sizeof *pi);
-
-    for (int s = 1; s <= info_length; ++s) {
-        int m = (s-1) % 2;
-        int i = (int) floor((s-1) / (2 * k2));
-        int j = (int) floor((s-1) / 2) - i*k2;
-        int t = (19*i + 1) % (k1/2);
-        int q = t % 8 + 1;
-        int c = (p[q-1]*j + 21*m) % k2;
-        pi[s-1] = 2*(t + c*(k1/2) + 1) - m - 1;
-    }
     t_turbocode turbo = turbo_initialize(code, code, pi, info_length);
 
     int max_cores = omp_get_num_procs();
     int max_threads = omp_get_max_threads();
-    printf("Total number of cores detected: %d\n", max_cores);
-    printf("Total number of threads detected: %d\n", max_threads);
-    exit(EXIT_SUCCESS);
 
     // simulation loop
     // initialize seed of RNG/*{{{*/
@@ -292,7 +305,7 @@ int main(int argc, char *argv[])
     int packet_count = 0;
     int interval = num_packets * 0.05 + 1;
 
-    omp_set_num_threads(4);
+    omp_set_num_threads(cores);
     #pragma omp parallel
     {
         #pragma omp for nowait
