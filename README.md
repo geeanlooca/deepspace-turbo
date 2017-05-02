@@ -13,6 +13,7 @@ Of course, since this was initially just an implementation of the already mentio
 ### Dependencies
 - gcc / clang
 - OpenMP (only needed in the `main.c` file to speed up the simulation)
+- make
 
 If you use [CLion](https://www.jetbrains.com/clion/) as an IDE you can directly import the project and compile/build it from there. In any other case, either compile every single source code or wait for a decent Makefile :)
 

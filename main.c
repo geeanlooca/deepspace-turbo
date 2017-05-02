@@ -278,6 +278,12 @@ int main(int argc, char *argv[])
     }
     t_turbocode turbo = turbo_initialize(code, code, pi, info_length);
 
+    int max_cores = omp_get_num_procs();
+    int max_threads = omp_get_max_threads();
+    printf("Total number of cores detected: %d\n", max_cores);
+    printf("Total number of threads detected: %d\n", max_threads);
+    exit(EXIT_SUCCESS);
+
     // simulation loop
     // initialize seed of RNG/*{{{*/
     srand(time(NULL));
