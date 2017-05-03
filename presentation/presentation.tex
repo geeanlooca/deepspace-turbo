@@ -17,6 +17,8 @@
 \usepackage{mathtools}
 \usepackage{pgf}
 \usepackage{pifont}
+\usepackage{algpseudocode}
+\usepackage{listings}
 % \setsansfont{Ubuntu}
 % \setmonofont{Ubuntu Mono}
 
@@ -60,92 +62,154 @@
 \maketitle
 
 %======================================================================================
-\begin{frame}{Electro-optic modulators}
-    Convert electronic signal to high bit-rate optical signal.\pause
-
-    Desired features:\pause
+\section{Introduction}
+\begin{frame}{Standard specifications}
+    The standard specifies different input packet lengths $k$
     \begin{itemize}
-        \item high switching speed\pause
-        \item high bandwidth\pause
-        \item small footprint (\emph{Nanoscale...})\pause
-        \item compatibility with on-chip electronic components\pause
-        \item low insertion loss\pause
-        \item energy efficiency
+        \item $1784$
+        \item $3568$
+        \item $7136$
+        \item $8920$
+    \end{itemize}\pause
+
+    ...and different code rates $R$
+    \begin{itemize}
+        \item $1/2$
+        \item $1/3$
+        \item $1/4$
+        \item $1/6$
     \end{itemize}    
-    % Usually can't meet every requirement. 
 \end{frame}
 %======================================================================================
-\begin{frame}{Graphene: why?}
-    \vspace{10pt}
-    \begin{minipage}{0.6\textwidth}
-        \begin{figure}
-            \centering
-            \includegraphics[width=\textwidth]{./images/BER}
-        \end{figure}
-    \end{minipage}\hfill
-    \begin{minipage}{0.4\textwidth}
-        \begin{itemize}
-            \pause
-            \item Flexible\pause
-            \item Robust\pause
-            \item Small footprint\pause
-            \item Great thermal characteristics \pause
-            \item \alert{High electron mobility}\pause
-            \item \alert{\textbf{Voltage-dependent optical conductivity}}\pause
-        \end{itemize}
-    \end{minipage}
-    \begin{center}
-        \LARGE
-        Great for high speed optical modulators!
-    \end{center}
-\end{frame}
-
-%======================================================================================
-\begin{frame}{However...}
-    ...small dimensions of graphene can be a problem:\pause
-    \begin{itemize}
-        \item operating wavelength (1550 nm) is huge in comparison\pause
-        \item need to enhance interaction with light\pause
-        \item new waveguide designs must be studied
-    \end{itemize}
+\begin{frame}{Encoder structure}
     \begin{figure}
         \centering
-        \begin{tikzpicture}
-            \node (img3) {\includegraphics[height=3cm]{./images/BER}};
-            \node (img4) at (img3.east)[xshift=2cm] {\includegraphics[height=3cm]{./images/BER}};
-        \end{tikzpicture}
-        \caption{\cite{Xu2004,Sun2007}}
+        \includegraphics[height=0.75\textheight]{./images/encoder-structure}
+    \end{figure}
+    Convolutional codes defined through forward and backward connection vectors
+\end{frame}
+
+%======================================================================================
+\begin{frame}[c,fragile]{Example: defining a code in C}
+    \begin{lstlisting}[
+        language=C,
+        basicstyle=\scriptsize,
+        commentstyle=\color{mLightGreen},
+        stringstyle=\color{mLightRed}
+        ]
+    // define first code
+    int N_components = 2;
+    char *forward[N_components];
+    forward[0] = "10011";
+    forward[1] = "10101";
+
+    char *backward = "0011";
+
+    t_convcode code = convcode_initialize(forward, backward, 
+                                            N_components);
+    t_turbocode turbo = turbo_initialize(code, code,
+                                            pi, info_length);
+    \end{lstlisting}
+    
+\end{frame}
+%======================================================================================
+\begin{frame}{Interleaver}
+    \begin{figure}
+        \centering
+        \includegraphics[width=0.5\textwidth]{./images/interleaver}
+    \end{figure}
+    
+    $i$-th bit of the interleaved packet is the $\pi(i)$-th bit of the original packet
+
+    \begin{table}
+        \centering
+        \begin{tabular}{ccc}
+            \toprule
+            Information block length & $k_1$ & $k_2$\\
+            \midrule
+                1784    &   8  &     223$\\
+                3568    &   8  &     223$\times$ 2\\
+                7136    &   8  &     223$\times$ 4\\
+                8920    &   8  &     223$\times$ 5\\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+\end{frame}
+
+%======================================================================================
+\begin{frame}{Building the interleaver}
+    \begin{algorithmic}
+        \State $p = \begin{bmatrix}31 & 37 & 43 & 47 & 53 & 59 & 61 & 67\end{bmatrix}$
+        \For{$s = 1$ to $k$}
+            \State $m = (s-1) \mod 2$
+            \State $i = \text{floor}\left((s-1)/2k_2\right)$
+            \State $j = \text{floor}\left((s-1)/2\right) -i k_2$
+            \State $t = (19i + 1) \mod (k_1/2)$
+            \State $q = t \mod 8 + 1$
+            \State $c = (p_q j + 21m) \mod k_2$
+            \State $\pi(s) = 2(t + c k_1/2 +1) - m$
+        \EndFor
+    \end{algorithmic}
+\end{frame}
+
+%======================================================================================
+\begin{frame}[c]{Decoding}
+    \begin{itemize}
+        \item BCJR (in log domain) on upper and lower code
+        \item scheduling as seen in class
+        \item number of iterations is tuned accordingly
+        \item puncturing is applied at reception for an easier implementation
+            $\hat{r}[i] = r[i]\cdot p[i]$, $ 1 \leq i \leq (k+4)/R$
+    \end{itemize}
+    
+\end{frame}
+%======================================================================================
+\begin{frame}[c,fragile]{Example: defining a code in C}
+    \begin{lstlisting}[
+        language=C,
+        basicstyle=\scriptsize,
+        commentstyle=\color{mLightGreen},
+        stringstyle=\color{mLightRed}
+        ]
+        int *decoded = NULL;
+        for (int i = 0; i < iterations; i++) {
+
+            // run BCJR on upper code
+            convcode_extrinsic(streams[0], lengths[0], 
+                                 &messages, code.upper_code,
+                                 noise_variance, 0);
+            // apply interleaver
+            message_interleave(&messages, code);
+
+            // run BCJR on lower code
+            decoded = convcode_extrinsic(streams[1], lengths[1], 
+                                 &messages, code.lower_code, 
+                                 noise_variance, 
+                                 i == (iterations - 1));
+            // deinterleave
+            message_deinterleave(&messages, code);
+        }
+    \end{lstlisting}
+\end{frame}
+
+%======================================================================================
+\begin{frame}[c]{Effect of increasing number of iterations}
+    \begin{figure}
+        \centering
+       \includegraphics[height=0.9\textheight]{./images/BER}
     \end{figure}
 \end{frame}
-
 %======================================================================================
-\begin{frame}{Light-graphene interaction}
-    Two different phenomena:\pause
-    \begin{itemize}
-        \item \textbf{Interband absorption:} photon get absorbed and electron moves to conduction band\pause
-        \item \textbf{Intraband absorption:} photon get absorbed and electron stays in same band but in a higher level\pause
-    \end{itemize} 
-
-    \begin{alertblock}{Conductivity}
-        \vspace{-8pt}
-        \begin{align*}
-            \sigma_g &= \sigma_{inter}(\omega,\mu_c, T) + \sigma_{intra}(\omega,\mu_c, T) \\
-                     &\simeq \sigma_{inter}(\omega,\mu_c, T)  
-            \qquad\text{ when } \mu_c < \hbar\omega/2
-        \end{align*}
-    \end{alertblock} 
-    %Both depend on chemical potential through applied \alert{gate voltage}.
-\end{frame}
-
-%======================================================================================
-\begin{frame}[c]{Conductivity of graphene}
-    \vspace{-15pt}
+\begin{frame}[c]{Effect of increasing number of iterations}
     \begin{figure}
         \centering
-        \includegraphics[height=\textheight]{./images/BER}
-    \end{figure}\pause
+       \includegraphics[width=1\textwidth]{./images/terminal}
+    \end{figure}
 \end{frame}
-
+%======================================================================================
+\begin{frame}[c]{Different packet sizes}
+    
+\end{frame}
 %======================================================================================
 \begin{frame}[c]{First type of modulator}
     \begin{figure}
