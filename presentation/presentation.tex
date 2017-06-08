@@ -107,8 +107,9 @@
 
     t_convcode code = convcode_initialize(forward, backward, 
                                             N_components);
-    t_turbocode turbo = turbo_initialize(code, code,
-                                            pi, info_length);
+
+    t_turbocode turbo = turbo_initialize(code, code, pi,
+                                            info_length);
     \end{lstlisting}
     
 \end{frame}
@@ -142,8 +143,8 @@
         \State $p = \begin{bmatrix}31 & 37 & 43 & 47 & 53 & 59 & 61 & 67\end{bmatrix}$
         \For{$s = 1$ to $k$}
             \State $m = (s-1) \mod 2$
-            \State $i = \text{floor}\left((s-1)/2k_2\right)$
-            \State $j = \text{floor}\left((s-1)/2\right) -i k_2$
+            \State $i = \text{floor}\left[(s-1)/(2k_2)\right]$
+            \State $j = \text{floor}\left[(s-1)/2\right] -i k_2$
             \State $t = (19i + 1) \mod (k_1/2)$
             \State $q = t \mod 8 + 1$
             \State $c = (p_q j + 21m) \mod k_2$
@@ -311,7 +312,6 @@
     \end{figure}
     %    Some references to showcase [allowframebreaks] \cite{knuth92,ConcreteMath,Simpson,Er01,greenwade93}
 \end{frame}
-
 %======================================================================================
 \appendix
 
