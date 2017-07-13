@@ -11,6 +11,29 @@
 #include <getopt.h>
 #include "colors.h"
 
+#define MAX_COMPONENTS 4
+
+
+// puncturing function: return 1 if bit k has to be punctured
+int puncturing(int k){
+
+    int bit_idx = k % 3;
+
+    // bit 0,3,6,... corresponding to systematic output
+    if (!bit_idx)
+        return 0;
+
+    // get block index
+    int block_idx = k / 3;
+
+    // on odd blocks puncture second bit
+    if (block_idx % 2){
+        return bit_idx == 1;
+    }
+
+    // on even blocks puncture third bit
+    return bit_idx == 2;
+}
 
 // thread routines
 int simulate_awgn(int *packet, double *noise_sequence, int packet_length, double sigma);
@@ -31,10 +54,11 @@ int main(int argc, char *argv[])
     int SNR_points = 8;
     float min_SNR = -2;
     float max_SNR = 2;
-    int cores = 4;
+    int cores = 1;
     int iterations = 2;
     int octets = 1;
 
+    int code_type = 1;
     char filename[PATH_MAX];
 
 
@@ -56,13 +80,14 @@ int main(int argc, char *argv[])
                         {"SNR-points",      required_argument,  0,  'n'},
                         {"iterations",      required_argument,  0,  'i'},
                         {"multiplier",      required_argument,  0,  'k'},
+                        {"code",            required_argument,  0,  't'},
                         {"help",            no_argument,        0,  'h'},
                         {0, 0, 0, 0}
                 };
 
         int option_index = 0;
 
-        c = getopt_long(argc, argv, "yhl:c:C:m:M:f:b:o:n:i:k:", long_options, &option_index);
+        c = getopt_long(argc, argv, "yhl:c:C:m:M:f:b:o:n:i:k:t:", long_options, &option_index);
 
         if (c == -1)
             break;
@@ -140,6 +165,10 @@ int main(int argc, char *argv[])
 
             case 'k':
                 octets = (int)strtol(optarg, NULL, 10);
+                break;
+
+            case 't':
+                code_type = (int)strtol(optarg, NULL, 10);
                 break;
 
             case 'o':
@@ -272,15 +301,87 @@ int main(int argc, char *argv[])
     double *BER = malloc(SNR_points*sizeof *BER);
     double *PER = malloc(SNR_points*sizeof *PER);
 
-    // define first code
-    int N_components = 2;
-    char *forward[N_components];
-    forward[0] = "10011";
-    forward[1] = "10101";
+    // define codes
+    char *forward_upper[MAX_COMPONENTS];
+    char *forward_lower[MAX_COMPONENTS];
+    t_convcode code1;
+    t_convcode code2;
+    t_turbocode turbo;
+    int N_components_upper = 2;
+    int N_components_lower = 1;
 
     char *backward;
     backward = "0011";
-    double rate = 1.0f/N_components;
+
+
+    switch (code_type){
+
+        case 1:
+            N_components_upper = 2;
+            N_components_lower = 1;
+
+
+            forward_upper[0] = "10011"; // systematic output
+            forward_upper[1] = "11011";
+
+            forward_lower[0] = "11011";
+            // need to define puncturing pattern here maybe with a pointer to function
+            // 110 101 110 101 110 101
+
+            code1 = convcode_initialize(forward_upper, backward, N_components_upper);
+            code2 = convcode_initialize(forward_lower, backward, N_components_lower);
+            turbo = turbo_initialize(code1, code2, pi, info_length, &puncturing);
+            break;
+
+        case 2:
+            N_components_upper = 2;
+            N_components_lower = 1;
+
+            forward_upper[0] = "10011"; // systematic output
+            forward_upper[1] = "11011";
+
+            forward_lower[0] = "11011"; // no need for puncturing
+
+            code1 = convcode_initialize(forward_upper, backward, N_components_upper);
+            code2 = convcode_initialize(forward_lower, backward, N_components_lower);
+            turbo = turbo_initialize(code1, code2, pi, info_length, NULL);
+            break;
+
+        case 3:
+            N_components_upper = 3;
+            N_components_lower = 1;
+
+            forward_upper[0] = "10011"; // systematic output
+            forward_upper[1] = "10101";
+            forward_upper[2] = "11111";
+
+            forward_lower[0] = "11011"; // no need for puncturing
+
+            code1 = convcode_initialize(forward_upper, backward, N_components_upper);
+            code2 = convcode_initialize(forward_lower, backward, N_components_lower);
+            turbo = turbo_initialize(code1, code2, pi, info_length, NULL);
+            break;
+
+        case 4:
+            N_components_upper = 4;
+            N_components_lower = 2;
+
+            forward_upper[0] = "10011"; // systematic output
+            forward_upper[1] = "11011";
+            forward_upper[2] = "10101";
+            forward_upper[3] = "11111";
+
+            forward_lower[0] = "11011"; // no need for puncturing
+            forward_lower[1] = "11111";
+
+            code1 = convcode_initialize(forward_upper, backward, N_components_upper);
+            code2 = convcode_initialize(forward_lower, backward, N_components_lower);
+            turbo = turbo_initialize(code1, code2, pi, info_length, NULL);
+            break;
+    }
+
+
+    double rate = 1.0f/N_components_upper;
 
     // get noise std variation from SNR
     for (int i = 0; i < SNR_points; i++)
@@ -288,11 +389,6 @@ int main(int argc, char *argv[])
         sigma[i] = sqrt(1/ pow(10, SNR_dB[i]/10));
         EbN0[i] = 1 / (2*rate*pow(sigma[i], 2));
     }
-
-    // initialize turbocode: mandatory call
-    t_convcode code = convcode_initialize(forward, backward, N_components);
-
-    t_turbocode turbo = turbo_initialize(code, code, pi, info_length);
 
     int max_cores = omp_get_num_procs();
     int max_threads = omp_get_max_threads();
