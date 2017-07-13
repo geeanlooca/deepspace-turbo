@@ -7,6 +7,11 @@
 build/
 cmake-build-debug/CMakeFiles/CMakeTmp/
 
+##########
+# Images #
+##########
+*.png
+
 #########
 # latex #
 #########
