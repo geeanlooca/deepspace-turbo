@@ -73,7 +73,7 @@ static void message_deinterleave(double ***messages, t_turbocode code)
 }
 
 
-t_turbocode turbo_initialize(t_convcode upper, t_convcode lower, int *interleaver, int packet_length, int (*puncturing_function)(int))
+t_turbocode turbo_initialize(t_convcode upper, t_convcode lower, int *interleaver, int packet_length)
 {
     t_turbocode code;/*{{{*/
     code.upper_code = upper;
@@ -88,7 +88,6 @@ t_turbocode turbo_initialize(t_convcode upper, t_convcode lower, int *interleave
     turbo_length += lower.components * (code.packet_length + lower.memory);
 
     code.encoded_length = turbo_length;
-    code.puncturing_function = puncturing_function;
 
     return code;/*}}}*/
 }
@@ -147,13 +146,6 @@ int *turbo_decode(double *received, int iterations, double noise_variance, t_tur
         streams[i] = malloc(lengths[i] * sizeof(double));
     }
 
-    if (code.puncturing_function)
-        for (int l = 0; l < code.encoded_length ; ++l) {
-            int to_puncture = code.puncturing_function(l);
-            if (to_puncture)
-                received[l] = 0;
-        }
-    
     int k = 0, c = 0, cw = 0;
     while (k < code.encoded_length) {
         t_convcode cc = codes[c];
@@ -196,6 +188,10 @@ int *turbo_decode(double *received, int iterations, double noise_variance, t_tur
         free(streams[i]);
     free(streams);
     free(turbo_decoded);
+
+    free(messages[0]);
+    free(messages[1]);
+    free(messages);
 
     //length of the 
     return decoded_deinterleaved; /*}}}*/
