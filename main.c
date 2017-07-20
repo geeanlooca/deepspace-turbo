@@ -21,25 +21,25 @@ int puncturing(int k){
 
     // bit 0,3,6,... corresponding to systematic output
     if (!bit_idx)
-        return 0;
+        return 1;
 
     // get block index
     int block_idx = k / 3;
 
     // on odd blocks puncture second bit
     if (block_idx % 2){
-        return bit_idx == 1;
+        return bit_idx != 1;
     }
 
     // on even blocks puncture third bit
-    return bit_idx == 2;
+    return bit_idx != 2;
 }
 
 // thread routines
 int simulate_awgn(int *packet, double *noise_sequence, int packet_length, double sigma);
 int simulate_conv(int *packet, double *noise_sequence, int packet_length, double sigma, t_convcode code);
-int simulate_turbo(int *packet, double *noise_sequence, int packet_length, double sigma, t_turbocode code, int iterations);
-
+int simulate_turbo(int *packet, double *noise_sequence, int packet_length, double sigma, t_turbocode code, int iterations,
+                   int *puncturing_pattern);
 
 int main(int argc, char *argv[])
 {
@@ -50,6 +50,7 @@ int main(int argc, char *argv[])
     // default simulation parameters
     int packet_length = (int) 1e4;
     int num_packets = (int) 10;
+    int error_threshold = (int) 1e3;
 
     int SNR_points = 8;
     float min_SNR = -2;
@@ -57,6 +58,8 @@ int main(int argc, char *argv[])
     int cores = 1;
     int iterations = 2;
     int octets = 1;
+    double rate = 1/2;
+    int *puncturing_pattern = NULL;
 
     int code_type = 1;
     char filename[PATH_MAX];
@@ -293,13 +296,13 @@ int main(int argc, char *argv[])
     }
 
     // allocate memory to store parameters and results
-    double *SNR_dB = linspace(min_SNR, max_SNR, SNR_points);
+    double *EbN0_dB = linspace(min_SNR, max_SNR, SNR_points);
     double *sigma = malloc(SNR_points* sizeof *sigma);
-    double *EbN0 = malloc(SNR_points * sizeof *EbN0);
     long int *errors = calloc(SNR_points, sizeof *errors);
     int *erroneous_packets = calloc(SNR_points, sizeof *erroneous_packets);//needed to estimate PER (Packer Error Probability)
     double *BER = malloc(SNR_points*sizeof *BER);
     double *PER = malloc(SNR_points*sizeof *PER);
+    int *processed_packets = calloc(SNR_points, sizeof *processed_packets);
 
     // define codes
     char *forward_upper[MAX_COMPONENTS];
@@ -314,6 +317,7 @@ int main(int argc, char *argv[])
     backward = "0011";
 
 
+    // build selected code
     switch (code_type){
 
         case 1:
@@ -330,7 +334,15 @@ int main(int argc, char *argv[])
 
             code1 = convcode_initialize(forward_upper, backward, N_components_upper);
             code2 = convcode_initialize(forward_lower, backward, N_components_lower);
-            turbo = turbo_initialize(code1, code2, pi, info_length, &puncturing);
+            turbo = turbo_initialize(code1, code2, pi, info_length);
+            rate = 1.0/2.0;
+
+            puncturing_pattern = malloc(turbo.encoded_length * sizeof *puncturing_pattern);
+
+            // build puncturing pattern
+            for (int i = 0; i < turbo.encoded_length; ++i) {
+                puncturing_pattern[i] = puncturing(i);
+            }
             break;
 
         case 2:
@@ -344,7 +356,8 @@ int main(int argc, char *argv[])
 
             code1 = convcode_initialize(forward_upper, backward, N_components_upper);
             code2 = convcode_initialize(forward_lower, backward, N_components_lower);
-            turbo = turbo_initialize(code1, code2, pi, info_length, NULL);
+            turbo = turbo_initialize(code1, code2, pi, info_length);
+            rate = 1/3.0;
             break;
 
         case 3:
@@ -359,7 +372,8 @@ int main(int argc, char *argv[])
 
             code1 = convcode_initialize(forward_upper, backward, N_components_upper);
             code2 = convcode_initialize(forward_lower, backward, N_components_lower);
-            turbo = turbo_initialize(code1, code2, pi, info_length, NULL);
+            turbo = turbo_initialize(code1, code2, pi, info_length);
+            rate = 1/4.0;
             break;
 
         case 4:
@@ -376,18 +390,16 @@ int main(int argc, char *argv[])
 
             code1 = convcode_initialize(forward_upper, backward, N_components_upper);
             code2 = convcode_initialize(forward_lower, backward, N_components_lower);
-            turbo = turbo_initialize(code1, code2, pi, info_length, NULL);
+            turbo = turbo_initialize(code1, code2, pi, info_length);
+            rate = 1/6.0;
             break;
     }
-
-
-    double rate = 1.0f/N_components_upper;
 
     // get noise std variation from SNR
     for (int i = 0; i < SNR_points; i++)
     {
-        sigma[i] = sqrt(1/ pow(10, SNR_dB[i]/10));
-        EbN0[i] = 1 / (2*rate*pow(sigma[i], 2));
+        double EbN0 = pow(10, EbN0_dB[i]/10.0);
+        sigma[i] = sqrt(1.0/(EbN0*2*rate));
     }
 
     int max_cores = omp_get_num_procs();
@@ -401,6 +413,8 @@ int main(int argc, char *argv[])
     int packet_count = 0;
     int interval = num_packets * 0.05 + 1;
 
+
+    // simulation loop
     omp_set_num_threads(cores);
     #pragma omp parallel
     {
@@ -411,16 +425,18 @@ int main(int argc, char *argv[])
             // generate packet
             int *packet = randbits(info_length);
 
-            if (! (packet_count % interval))
-                printf("Processing packet #%d/%d\n", packet_count, num_packets);
+            printf("Processing packet #%d/%d\n", packet_count, num_packets);
 
             //double *noise_sequence = randn(0, 1, packet_length);
             double *noise_seq_coded = randn(0, 1, turbo.encoded_length);
 
             for (int s = 0; s < SNR_points; s++){
-//                errors[s] += simulate_conv(packet, noise_seq_coded, info_length, sigma[s], code);
-                errors[s] += simulate_turbo(packet, noise_seq_coded, info_length, sigma[s], turbo, iterations);
-                erroneous_packets[s] += errors[s] != 0;
+                if (errors[s] < error_threshold){
+                    errors[s] += simulate_turbo(packet, noise_seq_coded, info_length, sigma[s], turbo,
+                                                iterations, puncturing_pattern);
+                    erroneous_packets[s] += errors[s] != 0;
+                    processed_packets[s]++;
+                }
             }
 
             free(packet);
@@ -433,27 +449,27 @@ int main(int argc, char *argv[])
     for (int i = 0; i < SNR_points; i++)
     {
 
-        PER[i] = (double) erroneous_packets[i]/(num_packets);
-        BER[i] = (double) errors[i]/(num_packets*info_length);
+        PER[i] = (double) erroneous_packets[i]/(processed_packets[i]);
+        BER[i] = (double) errors[i]/(processed_packets[i]*info_length);
     }
 
     printf(BOLDGREEN "\nSimulation completed.\n\n" RESET);
 
     // save results
-    char *headers[] = {"SNR", "BER", "PER"};
-    save_data(SNR_dB, BER, PER, headers, SNR_points, file);
+    char *headers[] = {"EbN0", "BER", "PER"};
+    save_data(EbN0_dB, BER, PER, headers, SNR_points, file);
     fclose(file);
 
     // print results
-    printf(BOLDYELLOW "%20s%20s%20s\n" RESET, "SNR [dB]", "BER", "PER");
+    printf(BOLDYELLOW "%20s%20s%20s\n" RESET, "EbN0 [dB]", "BER", "PER");
     for (int j = 0; j < SNR_points; ++j)
-       printf("%20f%20.4e%20.4e\n", SNR_dB[j], BER[j], PER[j]);
+       printf("%20f%20.4e%20.4e\n", EbN0_dB[j], BER[j], PER[j]);
 
     // release allocated memory
     free(BER);
     free(PER);
     free(errors);
-    free(SNR_dB);
+    free(EbN0_dB);
     free(sigma);
 
     return 0;
@@ -498,15 +514,19 @@ int simulate_conv(int *packet, double *noise_sequence, int packet_length, double
     return errors;/*}}}*/
 }
 
-int simulate_turbo(int *packet, double *noise_sequence, int packet_length, double sigma, t_turbocode code, int iterations)
+int simulate_turbo(int *packet, double *noise_sequence, int packet_length, double sigma, t_turbocode code, int iterations,
+                   int *puncturing_pattern)
 {
     int errors = 0;/*{{{*/
     int *encoded = turbo_encode(packet, code);
     int encoded_length = code.encoded_length;
 
     double *received = malloc(encoded_length * sizeof *received);
-    for (int i = 0; i < encoded_length; i++)
-        received[i] = (2*encoded[i] - 1) + sigma*noise_sequence[i];
+    for (int i = 0; i < encoded_length; i++) {
+        double r = (2 * encoded[i] - 1) + sigma * noise_sequence[i];
+        double kkk = (puncturing_pattern) ? puncturing_pattern[i] * r : r;
+        received[i] = kkk;
+    }
 
     int *decoded = turbo_decode(received, iterations, sigma*sigma, code);
     for (int j = 0; j < packet_length; ++j)
