@@ -26,7 +26,7 @@ for i in xrange(1, arg_num-1, 2):
 fig = plt.figure()
 for i in range(len(files)):
     df = pd.read_csv(files[i], sep=',')
-    SNR = df['SNR']
+    SNR = df['EbN0']
     BER = df['BER']
     plt.semilogy(SNR, BER, label=labels[i])
 
@@ -35,7 +35,7 @@ grid_color=np.ones(3)*0.1
 plt.legend(loc='best', fontsize=14)
 plt.grid(alpha=0.7, which='both')
 plt.tick_params(labelsize=12)
-plt.xlabel('$\Gamma$', fontsize=16)
+plt.xlabel('$E_b / N_0$', fontsize=16)
 plt.ylabel('BER', fontsize=16)
 plt.savefig(output_file, dpi=300)
 plt.close(fig)
