@@ -69,7 +69,7 @@ double *noise_sequence = randn(0, sigma, packet_length);
 
 double *received_signal = malloc(encoded_length * sizeof *received_signal);
 
-// generate PAM symbols and add noise
+// generate antipodal symbols and add noise
 for (int i = 0; i < encoded_length; i++)
     received[i] = (2*encoded_packet[i] - 1) + noise_sequence[i];
 
