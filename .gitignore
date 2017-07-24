@@ -2,7 +2,6 @@
 *.out
 *.log
 *.o
-*.csv
 .idea/workspace.xml
 build/
 cmake-build-debug/CMakeFiles/CMakeTmp/
