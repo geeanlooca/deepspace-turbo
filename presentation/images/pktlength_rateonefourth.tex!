@@ -1,0 +1,21 @@
+presentation.tex|42 warning| Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+presentation.tex|85 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 85--85
+presentation.tex|92 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 92--92
+presentation.tex|117 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 117--117
+presentation.tex|139 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 139--139
+presentation.tex|155 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 155--155
+presentation.tex|167 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 167--167
+presentation.tex|195 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 195--195
+presentation.tex|205 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 205--205
+presentation.tex|212 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 212--212
+images/iterations_rateonehalf.tex|48 error| Package pgfplots Error: Could not read table file 'data/pktlength_rateonefourth/10000pkts_3octets.csv' in 'search path=.'. In case you intended to provide inline data: maybe TeX screwed up your end-of-lines? Try `row sep=crcr' and terminate your lines with `\\' (refer to the pgfplotstable manual for details).
+presentation.tex|218 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 218--218
+presentation.tex|230 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 230--230
+presentation.tex|246 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 246--246
+presentation.tex|259 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 259--259
+presentation.tex|268 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 268--268
+presentation.tex|278 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 278--278
+presentation.tex|293 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 293--293
+presentation.tex|306 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 306--306
+presentation.tex|319 warning| Overfull \hbox (0.4pt too wide) in paragraph at lines 319--319
+presentation.tex|321 warning| Package hyperref Warning: Token not allowed in a PDF string (Unicode):

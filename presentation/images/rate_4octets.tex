@@ -1,0 +1,66 @@
+\begin{tikzpicture}
+\pgfplotsset{cycle list/Set1-7,
+    cycle multiindex* list={
+        mark list*\nextlist
+        Set1-7\nextlist
+    },}
+
+    \begin{axis}[
+        clip mode=individual,
+        ymode=log,
+        height=0.8\textheight,
+        width=0.7\textwidth,
+        %every minor grid/.style={densely dotted, opacity=0.9},
+        xlabel={$E_b/N_0$ [dB]},
+        ylabel={BER},
+        axis y line = left,
+        axis x line = top,
+        y axis line style = {stealth-},
+        x axis line style={shorten >=-10pt},
+        y axis line style={shorten <=-10pt},
+        grid=both,
+        xtick align=inside,
+        ytick align=inside,
+        xtick={0,1,...,10},
+        ytick={1e-8,1e-7,1e-6,1e-5,1e-4,1e-3,1e-2,1e-1},
+        line join=bevel,
+        ymax = 1,
+        ymin = 1e-8,
+        xmax = 8,
+        minor x tick num=0,
+        legend style={draw=none,at={(0.5,-0.1)}, anchor=north,/tikz/every even column/.append style={column sep=5pt}},
+        legend cell align=left,
+        legend columns=3,
+        %cycle multi list={Set1-4}
+        ]
+        \addplot+[
+            thick,
+        ] table[x=EbN0,y=BER,col sep=comma] {data/rate_4octets/10000pkts_code1.csv};
+        \addlegendentry{$R=1/2$};
+        
+        \addplot+[
+            thick,
+        ] table[x=EbN0,y=BER,col sep=comma] {data/rate_4octets/10000pkts_code2.csv};
+        \addlegendentry{$R=1/3$};
+        
+        \addplot+[
+            thick,
+        ] table[x=EbN0,y=BER,col sep=comma] {data/rate_4octets/10000pkts_code3.csv};
+        \addlegendentry{$R=1/4$};
+        
+        \addplot+[
+        thick,
+        ] table[x=EbN0,y=BER,col sep=comma] {data/rate_4octets/10000pkts_code4.csv};
+        \addlegendentry{$R=1/6$};
+                    
+        
+        \addplot+[
+            mark=none,
+            color=black,
+            style=solid,
+            thick
+        ] table[x=EbN0,y=BER,col sep=comma] {data/uncoded.csv};
+        \addlegendentry{Uncoded};
+        
+\end{axis}
+\end{tikzpicture}
