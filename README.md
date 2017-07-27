@@ -160,7 +160,6 @@ These two operations are fairly straightforward. We illustrate them with the fol
 int *encoded = turbo_encode(packet, turbo);
 int encoded_length = code.encoded_length;
 
-// generate PAM symbols and add noise
 double *received = malloc(encoded_length * sizeof *received);
 for (int i = 0; i < encoded_length; i++)
     received[i] = (2*encoded[i] - 1) + noise_sequence[i];
