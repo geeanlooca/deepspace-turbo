@@ -168,4 +168,3 @@ for (int i = 0; i < encoded_length; i++)
 int *decoded = turbo_decode(received, iterations, sigma*sigma, code);
 ```
 
-## Puncturing
