@@ -43,13 +43,15 @@ int simulate_turbo(int *packet, double *noise_sequence, int packet_length, doubl
 
 int main(int argc, char *argv[])
 {
+
+
     // option flags
     int skipconfirm_flag = 0;
     int filename_flag = 0;
 
     // default simulation parameters
     int packet_length = (int) 1e4;
-    int num_packets = (int) 10;
+    int num_packets = (int) 30;
     int error_threshold = (int) 1e3;
 
     int SNR_points = 8;
@@ -148,6 +150,8 @@ int main(int argc, char *argv[])
                         "inside the interval [min-SNR, max-SNR]");
 
                 printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-i / --iterations", "set the number of iterations for the turbo decoding algorithm.");
+
+                printf(BOLDMAGENTA "%20s" RESET "\n\t%s\n\n" , "-t / --code", "Select the code to test. 1 for R=1/2, 2 for R=1/3, 3 for R=1/4 and 4 for R=1/6");
                 exit(EXIT_SUCCESS);
 
             case 'm':

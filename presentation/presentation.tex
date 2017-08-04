@@ -1,4 +1,4 @@
-\documentclass[handout,xcolor={usenames,dvipsnames},11pt]{beamer}
+\documentclass[xcolor={usenames,dvipsnames},11pt]{beamer}
 
 \defbeamertemplate{description item}{align left}{\insertdescriptionitem\hfill}
 
@@ -31,6 +31,9 @@
 \usefonttheme[onlymath]{serif}
 \setbeamertemplate{caption}{\raggedright\insertcaption\par}
 
+\usepackage{tikz,pgfplots,filecontents}
+\pgfplotsset{compat=1.7} 
+\usepgfplotslibrary{colorbrewer}
 
 \title{ \Large Turbo Codes for Deep Space Communications: CCSDS 131.0-B-2 standard implementation}
 % \title{\LARGE Reccomendation for Space Data System Standards}
@@ -82,10 +85,9 @@
 \end{frame}
 %======================================================================================
 \begin{frame}{Encoder structure}
-    \begin{figure}
-        \centering
+    \begin{center}
         \includegraphics[height=0.75\textheight]{./images/encoder-structure}
-    \end{figure}
+    \end{center}
     Convolutional codes defined through forward and backward connection vectors
 \end{frame}
 
@@ -115,23 +117,22 @@
 \end{frame}
 %======================================================================================
 \begin{frame}{Interleaver}
-    \begin{figure}
-        \centering
+    \begin{center}
         \includegraphics[width=0.5\textwidth]{./images/interleaver}
-    \end{figure}
+    \end{center}
     
     $i$-th bit of the interleaved packet is the $\pi(i)$-th bit of the original packet
 
     \begin{table}
         \centering
-        \begin{tabular}{cccccc}
+        \begin{tabular}{cc}
             \toprule
-            Information block length & $k_1$ & & $k_2$ & & $k_3$\\
+            Input length $k$ & $k_1 \times k_2 \times k_3$\\
             \midrule
-            1784    &   8  & $\times$ &     223$ & $\times$ & 1\\
-            3568    &   8  & $\times$ &     223$ & $\times$ & 2\\
-            7136    &   8  & $\times$ &     223$ & $\times$ & 4\\
-            8920    &   8  & $\times$ &     223$ & $\times$ & 5\\
+            $1784$    &   $8  \times 223 \times 1$\\
+            $3568$    &   $8  \times 223 \times 2$\\
+            $7136$    &   $8  \times 223 \times 4$\\
+            $8920$    &   $8  \times 223 \times 5$\\
             \bottomrule
         \end{tabular}
     \end{table}
@@ -155,12 +156,16 @@
 
 %======================================================================================
 \begin{frame}[c]{Decoding}
+    \begin{center}
+        \includegraphics[width=0.5\textwidth]{./images/decoding.png}
+    \end{center}
     \begin{itemize}
         \item BCJR (in log domain) on upper and lower code
-        \item scheduling as seen in class
-        \item number of iterations is tuned accordingly
-        \item puncturing is applied at reception for an easier implementation
-            $\hat{r}[i] = r[i]\cdot p[i]$, $ 1 \leq i \leq (k+4)/R$
+        \item puncturing is applied at reception 
+            $\hat{r}[i] = r[i]\cdot p[i]$ so that
+            \[
+                g_l(\mathbf{y}_l) \propto \exp\left( -\frac{\Vert \mathcal{L}(\mathbf{y}_l)^2\Vert}{2\sigma_w^2} \right) = \text{const}
+            \]
     \end{itemize}
     
 \end{frame}
@@ -172,6 +177,7 @@
         commentstyle=\color{mLightGreen},
         stringstyle=\color{mLightRed}
         ]
+        // **messages is initialized to log(0.5)
         int *decoded = NULL;
         for (int i = 0; i < iterations; i++) {
 
@@ -183,6 +189,7 @@
             message_interleave(&messages, code);
 
             // run BCJR on lower code
+            // save extrinsic messages in **messages
             decoded = convcode_extrinsic(streams[1], lengths[1], 
                                  &messages, code.lower_code, 
                                  noise_variance, 
@@ -192,136 +199,54 @@
         }
     \end{lstlisting}
 \end{frame}
-
 %======================================================================================
-\begin{frame}[c]{Effect of increasing number of iterations}
-    \begin{figure}
-        \centering
-       \includegraphics[height=0.9\textheight]{./images/BER}
-    \end{figure}
-\end{frame}
+% \begin{frame}[c]{Simulator options}
+%     \begin{figure}
+%         \centering
+%        \includegraphics[width=1\textwidth]{./images/terminal}
+%     \end{figure}
+% \end{frame}
 %======================================================================================
-\begin{frame}[c]{Effect of increasing number of iterations}
-    \begin{figure}
-        \centering
-       \includegraphics[width=1\textwidth]{./images/terminal}
-    \end{figure}
-\end{frame}
-%======================================================================================
-\begin{frame}[c]{Different packet sizes}
-    
-\end{frame}
-%======================================================================================
-\begin{frame}[c]{First type of modulator}
-    \begin{figure}
-        \begin{center}
-           \includegraphics[width=0.6\textwidth]{./images/BER}
-        \end{center}
-        \caption{\cite{Cho2011}}
-    \end{figure}\pause
+\begin{frame}[c]{Number of MP iterations}
     \begin{center}
-        Large footprint required to obtain adequate modulation depth        
+        \input{./images/iterations_rateonehalf.tex}
     \end{center}
 \end{frame}
 %======================================================================================
-\begin{frame}[c]{Novel design: slot waveguides}
-    \begin{figure}
-        \centering
-        \begin{tikzpicture}
-            \node (img3) {\includegraphics[height=3.5cm]{./images/BER}};
-            \node (img4) at (img3.east)[xshift=2.5cm] {\includegraphics[height=3.5cm]{./images/BER}};
-        \end{tikzpicture}
-        \caption{$\lambda = 1550$ nm, $n_{co} = 1.46$, $n_{cl} = 3.48$, $w_{co} = 101$ nm. \cite{Xu2004}}
-    \end{figure}\pause
-    \begin{alertblock}{Absorbed power per unit area}
-        \[
-            P \propto \frac{1}{2} |\mathbf{E}| \cdot \frac{Im\{\varepsilon_{eff}\}}{|\varepsilon_{eff}|} 
-        \]
-    \end{alertblock}
-\end{frame}  
-%======================================================================================
-\begin{frame}{Wavelength and Voltage dependency}
-    \begin{figure}
-        \centering
-        \begin{tikzpicture}
-            \node (img3) {\includegraphics[height=4cm]{./images/BER}};
-            \node (text1) at (img3.south)[yshift=-0.3cm]{Bandwidth > 1.25 THz};
-            \node (img4) at (img3.east)[xshift=2.5cm] {\includegraphics[height=4cm]{./images/BER}};
-            \node (text2) at (img4.south)[yshift=-0.3cm]{$\Delta V = 1.32 V$};
-        \end{tikzpicture}
-    \end{figure}
-    
-\end{frame}
-%======================================================================================
-\begin{frame}[c]{Plasmonic-graphene waveguide modulator}
-    \begin{figure}
-        \centering
-        \includegraphics[height=4cm]{./images/BER}
-    \end{figure}
-    
-    Cu is preferred (CMOS compatible), but has higher losses than Au, Ag.
-\end{frame}
-\begin{frame}{Plasmonic-graphene waveguide modulator}
-    200 nm wide, silicone nitride 10 nm thick (both layers), length 120 nm.
-    \begin{figure}
-        \centering
-        \includegraphics[width=0.5\textwidth]{./images/BER}
-    \end{figure}    
+\begin{frame}[c]{Different packet sizes: $R=1/2$}
     \begin{center}
-        Footprint $ \sim 2-3 \;\mu m^2$
+        \input{./images/pktlength_rateonehalf.tex}
     \end{center}
 \end{frame}
 %======================================================================================
-\begin{frame}{Wavelength and Voltage dependency}
-    \begin{figure}
-        \centering
-        \begin{tikzpicture}
-            \node (img3) {\includegraphics[height=4cm]{./images/BER}};
-            \node (text1) at (img3.south)[yshift=-0.3cm]{Bandwidth > 1 THz};
-            \node (img4) at (img3.east)[xshift=2.7cm] {\includegraphics[height=4cm]{./images/BER}};
-            \node (text2) at (img4.south)[yshift=-0.3cm]{$\Delta V = 1.38 V$};
-        \end{tikzpicture}
-    \end{figure}
+\begin{frame}[c]{Different packet sizes: $R=1/4$}
     \begin{center}
-        Energy consumption $\sim$ 0.12-0.13 pJ/bit
+        \input{./images/pktlength_rateonefourth.tex}
     \end{center}
 \end{frame}
 %======================================================================================
-\begin{frame}{Did we meet any requirement?}
-    \pause
-    \begin{itemize}
-        \item high bandwidth\pause\qquad \textcolor{TolLightGreen}{\textbf{Yes}}\pause
-        \item energy efficiency\pause\qquad \textcolor{TolLightGreen}{\textbf{Yes}}\pause
-    \item compatibility with on-chip electronic components\pause\quad \textcolor{TolLightGreen}{\textbf{Yes}}\pause
-        \item low insertion loss\pause\qquad \textcolor{TolLightGreen}{\textbf{Yes}}\pause
-        \item small footprint \pause\qquad \alert{\textbf{Kinda}} \pause
-        \item high switching speed\pause\qquad \alert{\textbf{Potentially}}
-    \end{itemize}
-    % Usually can't meet every requirement. 
+\begin{frame}[c]{Codes comparison: $L=8920$}
+    \begin{center}
+        \input{./images/rate_4octets.tex}
+    \end{center}
 \end{frame}
 %======================================================================================
-\begin{frame}{Recent advances: graphene-on-silicon MZI}
-    \begin{itemize}
-        \item Fix one arm in "dielectric state" (low loss) of graphene
-        \item Exploit changes in $Re\{ \varepsilon_{eff}\}$ wrt gate voltage to induce phase change
-    \end{itemize}
-    \begin{figure}
-        \centering
-        \includegraphics[width=0.5\textwidth]{./images/BER}
-        \caption{\cite{Phatak2016}}
-    \end{figure}
-    %    Some references to showcase [allowframebreaks] \cite{knuth92,ConcreteMath,Simpson,Er01,greenwade93}
+\begin{frame}[c]{Codes comparison: a closer look}
+    \begin{center}
+        \input{./images/rate_zoom.tex}
+    \end{center}
 \end{frame}
 %======================================================================================
-\appendix
-
-\begin{frame}[allowframebreaks]{References}
-  \bibliography{presentation}
-  \bibliographystyle{apalike}
-\end{frame}
-
 \begin{frame}[standout]
-    Thank you!
+
+    \begin{center}
+        Source code for simulator, scripts, plotting and presentation available at \\ \url{http://github.com/geeanlooca/deepspace-turbo}
+    \end{center}
+
+
+    {
+        \huge Thank you!
+    }
 \end{frame}
 % %======================================================================================
 

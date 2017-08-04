@@ -13,7 +13,7 @@ else
 fi
 
 if [ -z "$3" ]; then
-    OCTETS=4
+    OCTETS=5
 else
     OCTETS=$3
 fi
