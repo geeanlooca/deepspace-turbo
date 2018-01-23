@@ -17,7 +17,7 @@ Of course, since this was initially just an implementation of the already mentio
 
 If you use [CLion](https://www.jetbrains.com/clion/) as an IDE you can directly import the project and compile/build it from there. In any other case, either compile every single source code or wait for a decent Makefile :)
 
-For the presentation, I used the Beamer theme [Metropolis](https://github.com/matze/mtheme). Refer to the previous link for instructions.
+For the presentation I used the Beamer theme [Metropolis](https://github.com/matze/mtheme). Refer to the previous link for instructions.
 
 ---
 
