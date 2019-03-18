@@ -481,7 +481,6 @@ int main(int argc, char *argv[])
     free(errors);
     free(EbN0_dB);
     free(sigma);
-    free(pi);
     free(puncturing_pattern);
     free(code1);
     free(code2);

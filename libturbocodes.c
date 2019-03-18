@@ -196,4 +196,5 @@ int *turbo_decode(double *received, int iterations, double noise_variance, t_tur
 
 void *turbocode_clear(t_turbocode *code)
 {
+    free(code->interleaver);
 }
