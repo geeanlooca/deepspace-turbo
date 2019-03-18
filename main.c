@@ -37,8 +37,8 @@ int puncturing(int k){
 
 // thread routines
 int simulate_awgn(int *packet, double *noise_sequence, int packet_length, double sigma);
-int simulate_conv(int *packet, double *noise_sequence, int packet_length, double sigma, t_convcode code);
-int simulate_turbo(int *packet, double *noise_sequence, int packet_length, double sigma, t_turbocode code, int iterations,
+int simulate_conv(int *packet, double *noise_sequence, int packet_length, double sigma, t_convcode *code);
+int simulate_turbo(int *packet, double *noise_sequence, int packet_length, double sigma, t_turbocode *code, int iterations,
                    int *puncturing_pattern);
 
 int main(int argc, char *argv[])
@@ -311,9 +311,9 @@ int main(int argc, char *argv[])
     // define codes
     char *forward_upper[MAX_COMPONENTS];
     char *forward_lower[MAX_COMPONENTS];
-    t_convcode code1;
-    t_convcode code2;
-    t_turbocode turbo;
+    t_convcode *code1;
+    t_convcode *code2;
+    t_turbocode *turbo;
     int N_components_upper = 2;
     int N_components_lower = 1;
 
@@ -341,10 +341,10 @@ int main(int argc, char *argv[])
             turbo = turbo_initialize(code1, code2, pi, info_length);
             rate = 1.0/2.0;
 
-            puncturing_pattern = malloc(turbo.encoded_length * sizeof *puncturing_pattern);
+            puncturing_pattern = malloc(turbo->encoded_length * sizeof *puncturing_pattern);
 
             // build puncturing pattern
-            for (int i = 0; i < turbo.encoded_length; ++i) {
+            for (int i = 0; i < turbo->encoded_length; ++i) {
                 puncturing_pattern[i] = puncturing(i);
             }
             break;
@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
             printf("Processing packet #%d/%d\n", packet_count, num_packets);
 
             //double *noise_sequence = randn(0, 1, packet_length);
-            double *noise_seq_coded = randn(0, 1, turbo.encoded_length);
+            double *noise_seq_coded = randn(0, 1, turbo->encoded_length);
 
             for (int s = 0; s < SNR_points; s++){
                 if (errors[s] < error_threshold){
@@ -469,12 +469,23 @@ int main(int argc, char *argv[])
     for (int j = 0; j < SNR_points; ++j)
        printf("%20f%20.4e%20.4e\n", EbN0_dB[j], BER[j], PER[j]);
 
+
+    convcode_clear(code1);
+    convcode_clear(code2);
+
     // release allocated memory
+    free(erroneous_packets);
+    free(processed_packets);
     free(BER);
     free(PER);
     free(errors);
     free(EbN0_dB);
     free(sigma);
+    free(pi);
+    free(puncturing_pattern);
+    free(code1);
+    free(code2);
+    free(turbo);
 
     return 0;
 }
@@ -490,11 +501,11 @@ int simulate_awgn(int *packet, double *noise_sequence, int packet_length, double
     return errors;/*}}}*/
 }
 
-int simulate_conv(int *packet, double *noise_sequence, int packet_length, double sigma, t_convcode code)
+int simulate_conv(int *packet, double *noise_sequence, int packet_length, double sigma, t_convcode *code)
 {
     int errors = 0;/*{{{*/
     int *encoded = convcode_encode(packet, packet_length, code);
-    int encoded_length = code.components*(packet_length + code.memory);
+    int encoded_length = code->components*(packet_length + code->memory);
 
     double *received = malloc(encoded_length * sizeof *received);
     for (int i = 0; i < encoded_length; i++)
@@ -518,12 +529,12 @@ int simulate_conv(int *packet, double *noise_sequence, int packet_length, double
     return errors;/*}}}*/
 }
 
-int simulate_turbo(int *packet, double *noise_sequence, int packet_length, double sigma, t_turbocode code, int iterations,
+int simulate_turbo(int *packet, double *noise_sequence, int packet_length, double sigma, t_turbocode *code, int iterations,
                    int *puncturing_pattern)
 {
     int errors = 0;/*{{{*/
     int *encoded = turbo_encode(packet, code);
-    int encoded_length = code.encoded_length;
+    int encoded_length = code->encoded_length;
 
     double *received = malloc(encoded_length * sizeof *received);
     for (int i = 0; i < encoded_length; i++) {
